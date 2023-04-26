@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
-from util.textprocess import TextProcess
+from util.text_process import TextProcess
 
 
 class LibrispeechDataModule(pl.LightningDataModule):

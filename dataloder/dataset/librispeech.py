@@ -16,10 +16,9 @@ class LibriSpeechDataset(torch.utils.data.Dataset):
             clean_path="../input/librispeech-clean/LibriSpeech/",
             other_path="../input/librispeech-500-hours/LibriSpeech/",
             n_fft=400,
-            # n_fft=159,
     ):
         """
-            data_type \in ['train100', 'train360', 'train460', 'train960', 'dev', 'test']
+            data_type \in ['train100', 'train360', 'train460', 'train960', 'dev', 'test_module']
         """
 
         self.spect_func = torchaudio.transforms.Spectrogram(n_fft=n_fft)
@@ -35,8 +34,8 @@ class LibriSpeechDataset(torch.utils.data.Dataset):
             self.list_url += [other_path + "train-clean-360"]
         elif data_type == "dev":
             self.list_url = [clean_path + "dev-clean"]
-        elif data_type == "test":
-            self.list_url = [clean_path + "test-clean"]
+        elif data_type == "test_module":
+            self.list_url = [clean_path + "test_module-clean"]
 
         self._walker = []
         for path in self.list_url:

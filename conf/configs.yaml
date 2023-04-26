@@ -1,14 +1,14 @@
 datasets:
   librispeech:
-    clean_path: /data_disk/zlf/datasets/LibriSpeech/
-    other_path: /data_disk/zlf/datasets/LibriSpeech/
+    clean_path: /data_disk/zlf/dataloder/LibriSpeech/
+    other_path: /data_disk/zlf/dataloder/LibriSpeech/
     n_fft: 400
     train: train100
     val: dev
-    test: test
+    test: test_module
 
   aishell:
-    manifest_path: /data_disk/zlf/code/jModel/conformer-rnnt/aishell_manifest/
+    manifest_path: /data_disk/zlf/code/jModel/conformer-rnnt/manifest/
 
   dataset_selected: aishell
 

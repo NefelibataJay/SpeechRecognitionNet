@@ -1,18 +1,13 @@
-import sys
 import argparse
 
 import pytorch_lightning as pl
 import hydra
-from omegaconf import OmegaConf, DictConfig
-from util.textprocess import TextProcess
-from datasets.librispeech import LibriSpeechDataset
-from datasets.aishellDataset import AishellDataset
-from datasets.datamodule import AishellDataModule
+from omegaconf import DictConfig
+from dataloder.dataset.aishellDataset import AishellDataset
+from dataloder.datamodule import AishellDataModule
 from model.module import ConformerModule
 
-from pytorch_lightning.callbacks import ModelCheckpoint
-from util.textprocess import TextProcess
-
+from util.text_process import TextProcess
 
 
 parser = argparse.ArgumentParser(description="Config path")
@@ -38,7 +33,7 @@ def main(cfg: DictConfig):
         )
         test_set = AishellDataset(
             manifest_path=datasets_cfg.manifest_path,
-            data_type='test'
+            data_type='test_module'
         )
 
         dm = AishellDataModule(
@@ -81,7 +76,6 @@ def main(cfg: DictConfig):
         trainer.test(model, datamodule=dm, ckpt_path=cfg.ckpt.ckpt_path)
     else:
         trainer.test(model, datamodule=dm)
-
 
 
 if __name__ == "__main__":
