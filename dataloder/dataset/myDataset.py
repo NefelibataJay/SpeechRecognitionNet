@@ -50,8 +50,8 @@ class MyDataset(Dataset):
 
         speech_feature = self.extract_feature(wave)
 
-        speech_feature = speech_feature.permute(0, 2, 1)  # channel, time, feature
-        speech_feature = speech_feature.squeeze()  # time, feature
+        speech_feature = speech_feature.permute(0, 2, 1)  # channel:1 , time, feature:80
+        speech_feature = speech_feature.squeeze()  # time, feature:80
         input_lengths = speech_feature.size(0)  # time
         transcript = self.transcripts[file_name]
         target_lengths = len(transcript)
