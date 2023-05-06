@@ -7,7 +7,7 @@ from dataloder.dataset.aishellDataset import AishellDataset
 from dataloder.datamodule import AishellDataModule
 from model.module import ConformerModule
 
-from util.text_process import TextProcess
+from util.tokenizer import TextProcess
 
 
 parser = argparse.ArgumentParser(description="Config path")

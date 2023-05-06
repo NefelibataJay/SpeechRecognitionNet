@@ -9,8 +9,10 @@ class MyDataset(Dataset):
             dataset_path="/datasets/aishell/data_aishell/",
             feature_types="mfcc",
             data_type="train",
+            spec_aug=True,
     ):
 
+        self.spec_aug = spec_aug
         self.manifest_path = manifest_path
         self.data_type = data_type
         self.dataset_path = dataset_path
@@ -25,6 +27,9 @@ class MyDataset(Dataset):
             self.extract_feature = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_mels=80)
         elif self.feature_types == "spectrogram":
             self.extract_feature = torchaudio.transforms.Spectrogram()
+
+        if self.spec_aug:
+            pass
 
         if data_type == "train":
             self.tsv_path = manifest_path + 'train.tsv'

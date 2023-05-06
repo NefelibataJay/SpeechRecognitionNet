@@ -3,7 +3,7 @@ import torchaudio.transforms as T
 from module.conformer import Conformer
 import pytorch_lightning as pl
 import torchmetrics
-from util.text_process import TextProcess
+from util.tokenizer import TextProcess
 from transformers import get_linear_schedule_with_warmup
 
 
