@@ -33,21 +33,13 @@ class ConformerModule(pl.LightningModule):
         # inputs [batch_size, time, feature]
 
         batch_size = inputs.size(0)
-
-        zeros = torch.zeros((batch_size, 1)).to(device=self.device)
-        # 每一个target前面补0
-        compute_targets = torch.cat((zeros, targets), dim=1).to(
-            device=self.device, dtype=torch.int
-        )
-        compute_target_lengths = (target_lengths + 1).to(device=self.device)
+        input_dim = inputs.size(2)
 
         return (
             inputs,
             input_lengths,
             targets,
             target_lengths,
-            compute_targets,
-            compute_target_lengths,
         )
 
     def training_step(self, batch, batch_idx):
@@ -56,12 +48,10 @@ class ConformerModule(pl.LightningModule):
             input_lengths,
             targets,
             target_lengths,
-            compute_targets,
-            compute_target_lengths,
         ) = self.get_batch(batch)
 
         outputs, output_lengths = self.conformer(
-            inputs, input_lengths, compute_targets, compute_target_lengths
+            inputs, input_lengths, targets, target_lengths
         )
 
         loss = self.cal_loss(outputs, targets, output_lengths, target_lengths)
@@ -77,12 +67,10 @@ class ConformerModule(pl.LightningModule):
             input_lengths,
             targets,
             target_lengths,
-            compute_targets,
-            compute_target_lengths,
         ) = self.get_batch(batch)
 
         outputs, output_lengths = self.conformer(
-            inputs, input_lengths, compute_targets, compute_target_lengths
+            inputs, input_lengths, targets, target_lengths
         )
 
         loss = self.cal_loss(outputs, targets, output_lengths, target_lengths)
@@ -110,12 +98,10 @@ class ConformerModule(pl.LightningModule):
             input_lengths,
             targets,
             target_lengths,
-            compute_targets,
-            compute_target_lengths,
         ) = self.get_batch(batch)
 
         outputs, output_lengths = self.conformer(
-            inputs, input_lengths, compute_targets, compute_target_lengths
+            inputs, input_lengths, targets, target_lengths
         )
 
         loss = self.cal_loss(outputs, targets, output_lengths, target_lengths)
