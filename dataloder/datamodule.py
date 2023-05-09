@@ -47,8 +47,6 @@ class MyDataModule(pl.LightningDataModule):
         )
 
     def _collate_fn(self, batch):
-        batch = sorted(batch, key=lambda sample: sample[0].size(0), reverse=True)
-
         inputs = [i[0] for i in batch]
 
         input_lengths = torch.IntTensor([i[1] for i in batch])
