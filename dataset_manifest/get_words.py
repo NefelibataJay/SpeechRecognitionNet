@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 def get_word_dict(manifest_path):
     words_list = []
-    with open(manifest_path + 'words_dict.txt', 'r', encoding='utf-8') as word_file:
+    with open(manifest_path + 'vocab.txt', 'r', encoding='utf-8') as word_file:
         for line in tqdm(word_file.readlines()):
             word_list = line.split(' ')[0].strip()
             words_list.append(word_list)

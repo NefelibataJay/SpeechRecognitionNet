@@ -1,0 +1,4 @@
+<blank> 0
+<sos> 1
+<eos> 2
+<unk> 3
