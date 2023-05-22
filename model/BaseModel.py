@@ -2,14 +2,11 @@ from typing import Dict
 
 import pytorch_lightning as pl
 import torch
-import torch.nn as nn
 from omegaconf import DictConfig
 from torch import Tensor
 from torch.optim import ASGD, SGD, Adadelta, Adagrad, Adam, Adamax, AdamW
 
 from util.tokenizer import Tokenizer
-from torch.nn import CrossEntropyLoss, CTCLoss
-from torchmetrics import Accuracy, Precision, Recall, F1Score, WordErrorRate, CharErrorRate
 from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR, ExponentialLR, CosineAnnealingLR, ReduceLROnPlateau
 
 
@@ -34,9 +31,11 @@ class BaseModel(pl.LightningModule):
 
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
         super(BaseModel, self).__init__()
+        self.lr_scheduler = None
+        self.save_hyperparameters()
         self.optimizer = None
         self.configs = configs
-        self.num_classes = len(tokenizer.vocab)
+        self.num_classes = configs.model.num_classes
         self.tokenizer = tokenizer
         self.current_val_loss = 100.0
         if hasattr(configs, "trainer"):
@@ -134,54 +133,15 @@ class BaseModel(pl.LightningModule):
             "warmup_reduce_lr_on_plateau": ReduceLROnPlateau,
         }
 
-        scheduler = SCHEDULER_REGISTRY[self.configs.lr_scheduler.scheduler_name](self.optimizer,
-                                                                                 self.configs.lr_scheduler)
+        assert self.configs.lr_scheduler.scheduler_name is not None and \
+               self.configs.lr_scheduler.scheduler_name in SUPPORTED_OPTIMIZERS.keys(), \
+            (f"Unsupported Optimizer: {self.configs.lr_scheduler.scheduler_name}\n"
+             f"Supported Optimizers: {SUPPORTED_OPTIMIZERS.keys()}")
 
-        if self.configs.lr_scheduler.scheduler_name == "reduce_lr_on_plateau":
-            lr_scheduler = {
-                "scheduler": scheduler,
-                "monitor": "val_loss",
-                "interval": "epoch",
-            }
-        elif self.configs.lr_scheduler.scheduler_name == "warmup_reduce_lr_on_plateau":
-            lr_scheduler = {
-                "scheduler": scheduler,
-                "monitor": "val_loss",
-                "interval": "step",
-            }
-        else:
-            lr_scheduler = {
-                "scheduler": scheduler,
-                "interval": "step",
-            }
+        self.lr_scheduler = SCHEDULER_REGISTRY[self.configs.lr_scheduler.scheduler_name](self.optimizer,
+                                                                                         **self.configs.lr_scheduler)
 
-        return [self.optimizer], [lr_scheduler]
-
-    def configure_criterion(self, criterion_name: str) -> nn.Module:
-        r"""
-        Configure criterion for training.
-
-        Args:
-            criterion_name (str): name of criterion
-
-        Returns:
-            criterion (nn.Module): criterion for training
-        """
-        CRITERION_REGISTRY = {
-
-        }
-
-        if criterion_name in ("joint_ctc_cross_entropy", "label_smoothed_cross_entropy"):
-            return CRITERION_REGISTRY[criterion_name](
-                configs=self.configs,
-                num_classes=self.num_classes,
-                tokenizer=self.tokenizer,
-            )
-        else:
-            return CRITERION_REGISTRY[criterion_name](
-                configs=self.configs,
-                tokenizer=self.tokenizer,
-            )
+        return [self.optimizer], [self.lr_scheduler]
 
     def get_lr(self):
         for g in self.optimizer.param_groups:
