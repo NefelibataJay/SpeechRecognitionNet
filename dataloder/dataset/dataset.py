@@ -66,11 +66,16 @@ class MyDataset(Dataset):
 
         return speech_feature, input_lengths, transcript, target_lengths
 
-    def _parse_transcript(self, tokens: str) -> list:
+    def _parse_transcript(self, tokens: str):
         transcript = list()
         transcript.append(1)
         transcript.extend(self.encode_string(tokens))
         transcript.append(2)
 
         return transcript
+
+    def _parse_speech_wav(self,):
+        # TODO parse speech wav
+        pass
+
 

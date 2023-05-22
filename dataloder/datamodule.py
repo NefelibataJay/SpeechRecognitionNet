@@ -3,6 +3,19 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 
 
+def _collate_fn(batch):
+    inputs = [i[0] for i in batch]
+
+    input_lengths = torch.IntTensor([i[1] for i in batch])
+    targets = torch.tensor([i[2] for i in batch], dtype=torch.int32)
+    target_lengths = torch.IntTensor([i[3] - 1 for i in batch])
+
+    inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True)
+    targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True).to(dtype=torch.int)
+
+    return inputs, input_lengths, targets, target_lengths
+
+
 class MyDataModule(pl.LightningDataModule):
     def __init__(self,
                  train_set,
@@ -22,7 +35,7 @@ class MyDataModule(pl.LightningDataModule):
         return DataLoader(
             self.train_set,
             batch_size=self.batch_size,
-            collate_fn=self._collate_fn,
+            collate_fn=_collate_fn,
             num_workers=self.num_workers,
             pin_memory=True,
             shuffle=True,
@@ -32,7 +45,7 @@ class MyDataModule(pl.LightningDataModule):
         return DataLoader(
             self.val_set,
             batch_size=self.batch_size,
-            collate_fn=self._collate_fn,
+            collate_fn=_collate_fn,
             num_workers=self.num_workers,
             pin_memory=True,
         )
@@ -41,19 +54,7 @@ class MyDataModule(pl.LightningDataModule):
         return DataLoader(
             self.test_set,
             batch_size=self.batch_size,
-            collate_fn=self._collate_fn,
+            collate_fn=_collate_fn,
             num_workers=self.num_workers,
             pin_memory=True,
         )
-
-    def _collate_fn(self, batch):
-        inputs = [i[0] for i in batch]
-
-        input_lengths = torch.IntTensor([i[1] for i in batch])
-        targets = torch.tensor([i[2] for i in batch], dtype=torch.int32)
-        target_lengths = torch.IntTensor([i[3] - 1 for i in batch])
-
-        inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True)
-        targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True).to(dtype=torch.int)
-
-        return inputs, input_lengths, targets, target_lengths

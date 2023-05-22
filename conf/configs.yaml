@@ -59,6 +59,13 @@ optim:
   weight_decay: 1e-3
 
 sched:
+
+
+lr_scheduler:
+  scheduler_name: WarmupLR
+  gamma : 0.1
+  last_epoch: ${training.max_epoch}
+
   num_warmup_steps: 4000
   num_training_steps: 100000
 
