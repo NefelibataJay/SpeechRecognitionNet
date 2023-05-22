@@ -1,13 +1,15 @@
 import argparse
+import os
 
 import torch
 import pytorch_lightning as pl
 import hydra
+from lightning_fabric.loggers import TensorBoardLogger
 from omegaconf import DictConfig
 import torch.utils.data as data
 
 from dataloder.dataset.dataset import MyDataset
-from model.module.BaseModel import BaseModel
+from model.modules.BaseModel import BaseModel
 from util.tokenizer import Tokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
@@ -36,18 +38,19 @@ def main(cfg: DictConfig):
 
     cfg.model.num_classes = len(text_process.vocab)
 
+    logger = TensorBoardLogger(save_dir=os.getcwd(), version=1, name="lightning_logs")
+
     if cfg.train:
         model = BaseModel(**cfg.model)
-        trainer = pl.Trainer(default_root_dir="some/path/")
+        trainer = pl.Trainer(default_root_dir="some/path/", progress_bar=True, logger=logger, **cfg.trainer)
         if cfg.checkpoint_path:
             trainer.fit(model, ckpt_path="some/path/to/my_checkpoint.ckpt")
         else:
-            trainer.fit(model,)
+            trainer.fit(model)
     else:
         assert cfg.checkpoint_path is not None
         model = BaseModel.load_from_checkpoint("/path/to/checkpoint.ckpt")
         model.eval()
-
 
 
 if __name__ == "__main__":
