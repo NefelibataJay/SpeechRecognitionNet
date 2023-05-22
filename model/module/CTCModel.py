@@ -3,10 +3,11 @@ from typing import Dict
 import torch
 from omegaconf import DictConfig
 
+from .BaseModel import BaseModel
 from util.tokenizer import Tokenizer
 
 
-class OpenspeechCTCModel(torch.nn.Module):
+class CTCModel(BaseModel):
     """
     encoder-only models (ctc-model).
 
@@ -23,20 +24,16 @@ class OpenspeechCTCModel(torch.nn.Module):
     """
 
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
-        super(OpenspeechCTCModel, self).__init__()
+        super(CTCModel, self).__init__()
         self.configs = configs
         self.num_classes = len(tokenizer.vocab)
         self.tokenizer = tokenizer
         self.encoder = None
         self.decoder = None
 
-    def set_beam_decoder(self, beam_size: int = 3):
-
-        self.decoder = BeamSearchCTC(
-            labels=self.tokenizer.labels,
-            blank_id=self.tokenizer.blank_id,
-            beam_size=beam_size,
-        )
+    def set_beam_decoder(self, beam_size: int = 4):
+        # TODO beam search
+        pass
 
     def collect_outputs(
             self,
