@@ -12,24 +12,6 @@ from torch.nn import CrossEntropyLoss
 
 
 class BaseModel(pl.LightningModule):
-    r"""
-    Super class of openspeech models.
-
-    Note:
-        Do not use this class directly, use one of the sub classes.
-
-    Args:
-        configs (DictConfig): configuration set.
-        tokenizer (Tokenizer): tokenizer is in charge of preparing the inputs for a model.
-
-    Inputs:
-        inputs (torch.FloatTensor): A input sequence passed to encoders. Typically for inputs this will be a padded `FloatTensor` of size ``(batch, seq_length, dimension)``.
-        input_lengths (torch.LongTensor): The length of input tensor. ``(batch)``
-
-    Returns:
-        outputs (dict): Result of model predictions.
-    """
-
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
         super(BaseModel, self).__init__()
         self.lr_scheduler = None
@@ -42,65 +24,18 @@ class BaseModel(pl.LightningModule):
         self.criterion = None
 
     def forward(self, inputs: torch.FloatTensor, input_lengths: torch.LongTensor) -> Dict[str, Tensor]:
-        r"""
-        Forward propagate a `inputs` and `targets` pair for inference.
-
-        Inputs:
-            inputs (torch.FloatTensor): A input sequence passed to encoders. Typically for inputs this will be a padded `FloatTensor` of size ``(batch, seq_length, dimension)``.
-            input_lengths (torch.LongTensor): The length of input tensor. ``(batch)``
-
-        Returns:
-            outputs (dict): Result of model predictions.
-        """
         raise NotImplementedError
 
     def training_step(self, batch: tuple, batch_idx: int):
-        r"""
-        Forward propagate a `inputs` and `targets` pair for training.
-
-        Inputs:
-            batch (tuple): A train batch contains `inputs`, `targets`, `input_lengths`, `target_lengths`
-            batch_idx (int): The index of batch
-
-        Returns:
-            loss (torch.Tensor): loss for training
-        """
         raise NotImplementedError
 
     def validation_step(self, batch: tuple, batch_idx: int):
-        r"""
-        Forward propagate a `inputs` and `targets` pair for validation.
-
-        Inputs:
-            batch (tuple): A train batch contains `inputs`, `targets`, `input_lengths`, `target_lengths`
-            batch_idx (int): The index of batch
-
-        Returns:
-            loss (torch.Tensor): loss for training
-        """
         raise NotImplementedError
 
     def test_step(self, batch: tuple, batch_idx: int):
-        r"""
-        Forward propagate a `inputs` and `targets` pair for test.
-
-        Inputs:
-            batch (tuple): A train batch contains `inputs`, `targets`, `input_lengths`, `target_lengths`
-            batch_idx (int): The index of batch
-
-        Returns:
-            loss (torch.Tensor): loss for training
-        """
         raise NotImplementedError
 
     def configure_optimizers(self):
-        r"""
-        Choose what optimizers and learning-rate schedulers to use in your optimization.
-
-
-        Returns:
-            - **Dictionary** - The first item has multiple optimizers, and the second has multiple LR schedulers (or multiple ``lr_dict``).
-        """
         SUPPORTED_OPTIMIZERS = {
             "adam": Adam,
             "adagrad": Adagrad,
@@ -139,16 +74,14 @@ class BaseModel(pl.LightningModule):
             f"Supported Optimizers: {SUPPORTED_OPTIMIZERS.keys()}")
 
         self.lr_scheduler = SCHEDULER_REGISTRY[self.configs.lr_scheduler.scheduler_name](self.optimizer,
-                                                                                     **self.configs.lr_scheduler)
+                                                                                         **self.configs.lr_scheduler)
 
         return [self.optimizer], [self.lr_scheduler]
 
+    def get_lr(self):
+        for g in self.optimizer.param_groups:
+            return g["lr"]
 
-def get_lr(self):
-    for g in self.optimizer.param_groups:
-        return g["lr"]
-
-
-def set_lr(self, lr):
-    for g in self.optimizer.param_groups:
-        g["lr"] = lr
+    def set_lr(self, lr):
+        for g in self.optimizer.param_groups:
+            g["lr"] = lr
