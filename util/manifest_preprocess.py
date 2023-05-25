@@ -41,7 +41,7 @@ class ManifestPreprocess:
         pass
 
 
-class LibriSpeech100ManifestPreprocess(ManifestPreprocess):
+class LibriSpeechManifestPreprocess(ManifestPreprocess):
     LIBRI_SPEECH_DATASETS = [
         "train-clean-100",
         "train-960",
@@ -93,7 +93,7 @@ class LibriSpeech100ManifestPreprocess(ManifestPreprocess):
 
 def main(args):
     if args.dataset == "librispeech":
-        manifest_preprocess = LibriSpeech100ManifestPreprocess(args.dataset_path, args.output_path)
+        manifest_preprocess = LibriSpeechManifestPreprocess(args.dataset_path, args.output_path)
         manifest_preprocess.generate_manifest_files()
         manifest_preprocess.generate_character_vocab()
 
