@@ -1,18 +1,15 @@
-import re
-
 if __name__ == '__main__':
+    import librosa
+    import torchaudio
     import torch
-    from torchmetrics import CharErrorRate
 
-    # 准备模型的输出和标签数据
-    outputs = torch.tensor([[0.9, 0.1, 0.0, 0.0], [0.8, 0.1, 0.0, 0.1], [0.4, 0.3, 0.2, 0.1]])
-    targets = ['cat', 'dog', 'bird']
+    extract_feature = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_mels=80)
+    signal, _ = librosa.load('E:/Desktop/resources/test.wav', sr=16000)
+    signal = signal * (1 << 15)
 
-    # 初始化 CharErrorRate 对象
-    cer = CharErrorRate(ignore_case=True)
+    wave,_ = torchaudio.load('E:/Desktop/resources/test.wav')
+    wave = wave * (1 << 15)
 
-    # 计算 CER
-    cer.update(outputs, targets)
-    cer = cer.compute()
-
-    print(f'Character Error Rate: {cer:.4f}')
+    speech_feature = extract_feature(wave)
+    speech_feature2 = extract_feature(torch.tensor(signal))
+    print("ok")

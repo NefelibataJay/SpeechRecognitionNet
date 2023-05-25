@@ -1,8 +1,12 @@
+from typing import Tuple
+
 import torch
 import torchaudio
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 import librosa
+import os
+import glob
 
 from util.audio_augment import SpecAugment
 from util.tokenizer import Tokenizer
@@ -13,24 +17,26 @@ class SpeechToTextDataset(Dataset):
             self,
             configs: DictConfig,
             tokenizer: Tokenizer,
-            data_type="train",
+            audio_paths: list,
+            transcripts: list,
+            sos_id: int = 1,
+            eos_id: int = 2,
             # spec_aug=True,
+            # noise_augment=True,
     ):
-        # TODO add specaugment
-        # self.spec_aug = spec_aug
-
+        super(SpeechToTextDataset, self).__init__()
         self.tokenizer = tokenizer
         self.configs = configs
-        self.num_mel_bins = configs.num_mel_bins
+        self.sos_id = sos_id
+        self.eos_id = eos_id
 
-        self.manifest_path = configs.manifest_path
-        self.data_type = data_type
+        self.num_mel_bins = configs.num_mel_bins
+        self.sample_rate = configs.sample_rate
+
         self.dataset_path = configs.dataset_path
         self.feature_types = configs.feature_types
 
-        assert self.data_type in ["train", "test", "dev"], ".tev file not found"
         assert self.feature_types in ["mfcc", "fbank", "spectrogram"], "feature_types not found"
-
         # TODO: using k2 to generate feature
         if self.feature_types == "mfcc":
             self.extract_feature = torchaudio.transforms.MFCC(sample_rate=16000, n_mfcc=self.num_mel_bins)
@@ -39,41 +45,34 @@ class SpeechToTextDataset(Dataset):
         elif self.feature_types == "spectrogram":
             self.extract_feature = torchaudio.transforms.Spectrogram(n_fft=400)
 
-        self.tsv_path = self.manifest_path + self.data_type + '.tsv'
-        self.wav_path = []
-        self.transcripts = {}
-
-        with open(self.tsv_path, 'r', encoding='utf-8') as tsv_file:
-            for line in tsv_file.readlines():
-                self.wav_path.append(self.dataset_path + line.split('\t')[0])
-                self.transcripts[line.split('\t')[0]] = str(line.split('\t')[1].strip())
+        # TODO add specaugment
+        self.audio_paths = audio_paths
+        self.transcripts = transcripts
 
     def __len__(self):
-        return len(self.wav_path)
+        return len(self.audio_paths)
 
     def __getitem__(self, idx):
-        file_name = self.wav_path[idx]
-        wave, sr = torchaudio.load(file_name)
-        wave = wave * (1 << 15)
-        speech_feature = self.extract_feature(wave)
-
-        speech_feature = speech_feature.permute(0, 2, 1)  # channel , time, feature
-        speech_feature = speech_feature.squeeze()  # time, feature
+        speech_feature = self._parse_audio(self.audio_paths[idx])
+        transcript = self._parse_transcript(self.transcripts[idx])
         input_lengths = speech_feature.size(0)  # time
-
-        transcript = self._parse_transcript(self.transcripts[file_name])
         target_lengths = len(transcript)
 
         return speech_feature, input_lengths, transcript, target_lengths
 
     def _parse_transcript(self, tokens: str):
         transcript = list()
-        transcript.append(1)
+        transcript.append(self.sos_id)
         transcript.extend(self.tokenizer.text2int(tokens))
-        transcript.append(2)
+        transcript.append(self.eos_id)
 
         return transcript
 
-    def _parse_speech_wav(self, ):
-        # TODO parse speech wav
-        pass
+    def _parse_audio(self, audio_path):
+        signal = librosa.load(audio_path, sr=self.sample_rate)
+        signal = signal * (1 << 15)
+        # TODO speech augmentation
+        signal = torch.tensor(signal)
+        feature = self.extract_feature(signal)
+        feature = feature.transpose(1, 0)
+        return feature

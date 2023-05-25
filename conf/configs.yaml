@@ -1,22 +1,26 @@
-datasets:
-  only_one_set: False
-  manifest_path: /data_disk/zlf/code/jModel/conformer-rnnt/manifest/
-  dataset_path: /datasets/aishell/data_aishell/
-  feature_types: fbank
-  num_mel_bins: 80
-  spec_agument: True
+datamodule:
+  dataset:
+    dataset_path: E:/datasets/LibriSpeech
+    feature_types: fbank
+    num_mel_bins: 80
+    sample_rate: 16000
 
+#    spec_agument: True
+#    noise_augment: True
+
+  batch_size: ${training.batch_size}
+  one_dataset: False
+  val_set_ratio: 0.05
+  test_set_ratio: 0.05
+  num_workers: 0
+  manifest_path: D:/model/rnn-t/libriSpeech_manifest/
 
 tokenizer:
   lang: zh
   word_dict_path: D:\model\rnn-t\manifest\vocab.txt
 
-datamodule:
-  batch_size: ${training.batch_size}
-  num_workers: 0
-
 logger:
-  save_dir: tb_logs
+  root_dir: tb_logs
   name: model_logs
 
 model:

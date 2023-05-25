@@ -6,12 +6,10 @@ import pytorch_lightning as pl
 import hydra
 from lightning_fabric.loggers import TensorBoardLogger
 from omegaconf import DictConfig
-import torch.utils.data as data
 
 from dataloder.datamodule import SpeechToTextDataModule
-from dataloder.dataset.dataset import SpeechToTextDataset
 from model.modules.BaseModel import BaseModel
-from util.tokenizer import Tokenizer, CharTokenizer
+from util.tokenizer import EnglishCharTokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="./conf", help="config path")  # config path
@@ -25,26 +23,19 @@ def main(configs: DictConfig):
     device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
     print("Using device", device)
 
-    tokenizer = CharTokenizer(configs.tokenizer)
+    # set seed
+    pl.seed_everything(666)
+    torch.manual_seed(666)
 
-    if configs.datasets.only_one_set:
-        train_set = SpeechToTextDataset(configs.datasets, tokenizer, data_type="train")
-        train_set_size = int(len(train_set) * 0.8)
-        valid_set_size = len(train_set) - train_set_size
-        seed = torch.Generator().manual_seed(42)
-        train_set, val_set = data.random_split(train_set, [train_set_size, valid_set_size], generator=seed)
-        test_set = val_set
-    else:
-        train_set = SpeechToTextDataset(configs.datasets, tokenizer, data_type="train")
-        val_set = SpeechToTextDataset(configs.datasets, tokenizer, data_type="dev")
-        test_set = SpeechToTextDataset(configs.datasets, tokenizer, data_type="test")
+    tokenizer = EnglishCharTokenizer(configs.tokenizer)
 
     configs.model.num_classes = len(tokenizer.vocab)
 
-    data_module = SpeechToTextDataModule(configs.datamodule, train_set=train_set, val_set=val_set, test_set=test_set, )
+    data_module = SpeechToTextDataModule(configs.datamodule, tokenizer)
 
-    logger = TensorBoardLogger(save_dir=os.getcwd(), version=1, name="lightning_logs")
+    logger = TensorBoardLogger(**configs.logger)
 
+    ## TODO add do-train
     if configs.train:
         model = BaseModel(configs.model, tokenizer)
         trainer = pl.Trainer(default_root_dir="some/path/", progress_bar=True, logger=logger, **configs.trainer)
