@@ -90,13 +90,13 @@ def get_train_dev(manifest_path):
         test_data.extend([category_data[i] for i in test_indices])
         train_data.extend([category_data[i] for i in train_indices])
 
-    # 将分别抽取的测试集和训练集数据写入 test.tsv 和 train.tsv 文件中。
+    # 将分别抽取的测试集和训练集数据写入 test.tsv 和 train-clear-100.tsv 文件中。
     with open(manifest_path+'test.tsv', 'w',encoding='utf-8') as f:
         f.write('\t'.join(header) + '\n')
         for row in test_data:
             f.write('\t'.join(row) + '\n')
 
-    with open(manifest_path+'train.tsv', 'w',encoding='utf-8') as f:
+    with open(manifest_path+'train-clear-100.tsv', 'w',encoding='utf-8') as f:
         f.write('\t'.join(header) + '\n')
         for row in train_data:
             f.write('\t'.join(row) + '\n')

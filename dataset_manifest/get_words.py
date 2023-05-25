@@ -11,7 +11,7 @@ def get_word_dict(manifest_path):
 
     manifest_path = manifest_path + 'manifest/'
     with open(manifest_path + 'word_dict.txt', 'w', encoding='utf-8') as word_file:
-        with open(manifest_path + 'train.tsv') as train_file:
+        with open(manifest_path + 'train-clear-100.tsv') as train_file:
             for line in tqdm(train_file.readlines()):
                 word_list = [i for i in line.split('\t')[1].strip()]
                 words_list.extend(word_list)

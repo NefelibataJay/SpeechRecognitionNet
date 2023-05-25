@@ -1,4 +1,5 @@
 import torch
+from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 
@@ -16,20 +17,19 @@ def _collate_fn(batch):
     return inputs, input_lengths, targets, target_lengths
 
 
-class MyDataModule(pl.LightningDataModule):
+class SpeechToTextDataModule(pl.LightningDataModule):
     def __init__(self,
+                 configs: DictConfig,
                  train_set,
                  val_set,
                  test_set,
-                 batch_size: int = 20,
-                 num_workers: int = 0,
                  ):
         super().__init__()
         self.train_set = train_set
         self.val_set = val_set
         self.test_set = test_set
-        self.batch_size = batch_size
-        self.num_workers = num_workers
+        self.batch_size = configs.batch_size
+        self.num_workers = configs.num_workers
 
     def train_dataloader(self):
         return DataLoader(
