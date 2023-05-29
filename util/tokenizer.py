@@ -40,8 +40,8 @@ class EnglishCharTokenizer(Tokenizer):
         for ch in tokens:
             if ch in self.vocab:
                 label.append(self.vocab[ch])
-            elif ' ' in self.vocab:
-                label.append(self.vocab[' '])
+            elif '<unk>' in self.vocab:
+                label.append(self.vocab['<unk>'])
         return label
 
     def int2text(self, t: torch.Tensor) -> str:
