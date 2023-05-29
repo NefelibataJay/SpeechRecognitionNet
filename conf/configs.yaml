@@ -5,8 +5,8 @@ datamodule:
     num_mel_bins: 80
     sample_rate: 16000
 
-#    spec_agument: True
-#    noise_augment: True
+  #    spec_agument: True
+  #    noise_augment: True
 
   batch_size: ${training.batch_size}
   one_dataset: False
@@ -70,10 +70,6 @@ lr_scheduler:
   #  gamma: 0.1
   last_epoch: ${training.max_epoch}
 
-  num_warmup_steps: 4000
-  num_training_steps: 100000
-
-
 
 trainer:
   max_epochs: ${training.max_epoch}
@@ -82,7 +78,6 @@ trainer:
   detect_anomaly: True
   accumulate_grad_batches: 8
   gradient_clip_val: 5.0
-
 
 ckpt:
   have_ckpt: False

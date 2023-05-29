@@ -8,12 +8,14 @@ from lightning_fabric.loggers import TensorBoardLogger
 from omegaconf import DictConfig
 
 from dataloder.datamodule import SpeechToTextDataModule
+from model.conformer_ctc import ConformerCTC
 from model.modules.BaseModel import BaseModel
 from util.tokenizer import EnglishCharTokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="./conf", help="config path")  # config path
 parser.add_argument("-cn", default="configs", help="config name")  # config name
+parser.add_argument("--do-train", action="store_true", help="do train")
 
 args = parser.parse_args()
 
@@ -35,10 +37,9 @@ def main(configs: DictConfig):
 
     logger = TensorBoardLogger(**configs.logger)
 
-    ## TODO add do-train
-    if configs.train:
-        model = BaseModel(configs.model, tokenizer)
-        trainer = pl.Trainer(default_root_dir="some/path/", progress_bar=True, logger=logger, **configs.trainer)
+    if args.do_train:
+        model = ConformerCTC(configs.model, tokenizer)
+        trainer = pl.Trainer(progress_bar=True, logger=logger, **configs.trainer)
         if configs.checkpoint_path:
             trainer.fit(model, data_module, ckpt_path="some/path/to/my_checkpoint.ckpt")
         else:
