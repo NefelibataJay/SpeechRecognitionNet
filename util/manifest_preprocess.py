@@ -83,8 +83,8 @@ class LibriSpeechManifestPreprocess(ManifestPreprocess):
 
     def generate_character_vocab(self):
         vocab_file_path = os.path.join(self.output_manifest_path, self.vocab_path + ".txt")
-        special_tokens = ["<pad>", "<sos>", "<eos>", "<blank>"]
-        tokens = special_tokens + list(" abcdefghijklmnopqrstuvwxyz")
+        special_tokens = ["<pad>", "<sos>", "<eos>", "<blank>", "<unk>"]
+        tokens = special_tokens + list("abcdefghijklmnopqrstuvwxyz ")
 
         with open(vocab_file_path, "w", encoding="utf-8") as vocab_file:
             for idx, token in enumerate(tokens):
