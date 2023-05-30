@@ -8,20 +8,17 @@ from torch.optim import ASGD, SGD, Adadelta, Adagrad, Adam, Adamax, AdamW
 
 from util.tokenizer import Tokenizer
 from torch.optim.lr_scheduler import LambdaLR, StepLR, MultiStepLR, ExponentialLR, CosineAnnealingLR, ReduceLROnPlateau
-from torch.nn import CrossEntropyLoss
 
 
 class BaseModel(pl.LightningModule):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
         super(BaseModel, self).__init__()
         self.lr_scheduler = None
-        self.save_hyperparameters()
         self.optimizer = None
-        self.configs = configs
-        self.num_classes = configs.model.num_classes
-        self.tokenizer = tokenizer
-        self.current_val_loss = 100.0
         self.criterion = None
+        self.configs = configs
+        self.tokenizer = tokenizer
+        self.save_hyperparameters()
 
     def forward(self, inputs: torch.FloatTensor, input_lengths: torch.LongTensor) -> Dict[str, Tensor]:
         raise NotImplementedError
@@ -54,6 +51,7 @@ class BaseModel(pl.LightningModule):
         self.optimizer = SUPPORTED_OPTIMIZERS[self.configs.optimizer.optimizer_name](
             self.parameters(),
             lr=self.configs.lr_scheduler.lr,
+            **self.configs.optimizer
         )
 
         if self.configs.lr_scheduler.scheduler_name is None:
@@ -75,7 +73,7 @@ class BaseModel(pl.LightningModule):
 
         self.lr_scheduler = SCHEDULER_REGISTRY[self.configs.lr_scheduler.scheduler_name](self.optimizer,
                                                                                          **self.configs.lr_scheduler)
-
+        # optim_dict = {'optimizer': self.optimizer, 'lr_scheduler': self.lr_scheduler}
         return [self.optimizer], [self.lr_scheduler]
 
     def get_lr(self):

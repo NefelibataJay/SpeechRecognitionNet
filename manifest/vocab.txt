@@ -1,5 +1,5 @@
-<pad> 0
-<sos> 1
-<eos> 2
-<blank> 3
-<unk> 4
+<pad>|0
+<sos>|1
+<eos>|2
+<blank>|3
+<unk>|4

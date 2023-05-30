@@ -3,6 +3,7 @@ from collections import OrderedDict
 import torch
 from torch import Tensor
 from omegaconf import DictConfig
+from torch.nn.utils.rnn import pad_sequence
 from torch.optim import Adam
 
 from model.conformer import Conformer
@@ -15,6 +16,8 @@ from torchmetrics import CharErrorRate, WordErrorRate
 def get_batch(batch):
     inputs, input_lengths, targets, target_lengths = batch
     # inputs [batch_size, time, feature]
+    padded_feats = pad_sequence([b[1] for b in batch], batch_first=True, padding_value=0)
+    padded_feats = pad_sequence([b[1] for b in batch], batch_first=True, padding_value=0)
 
     batch_size = inputs.size(0)
     input_dim = inputs.size(2)
@@ -29,11 +32,12 @@ def get_batch(batch):
 
 class ConformerCTC(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
-        super(ConformerCTC).__init__(configs=configs, tokenizer=tokenizer)
+        super(ConformerCTC, self).__init__(configs=configs, tokenizer=tokenizer)
         self.configs = configs
-        self.criterion = CTCLoss(blank=0)
+        self.criterion = CTCLoss(blank=configs.model.blank_id)
         self.val_cer = CharErrorRate(ignore_case=True)
-        self.ConformerEncoder = Conformer(self.configs.model)
+        self.tokenizer = tokenizer
+        self.ConformerEncoder = Conformer(**configs.model.encoder)
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
         # pred

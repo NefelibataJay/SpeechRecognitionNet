@@ -18,8 +18,8 @@ def _collate_fn(batch):
     targets = torch.tensor([i[2] for i in batch], dtype=torch.int32)
     target_lengths = torch.IntTensor([i[3] - 1 for i in batch])
 
-    inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True)
-    targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True).to(dtype=torch.int)
+    inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True, padding_value=0)
+    targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0).to(dtype=torch.int)
 
     return inputs, input_lengths, targets, target_lengths
 
@@ -53,7 +53,7 @@ class SpeechToTextDataModule(pl.LightningDataModule):
                 tokenizer=self.tokenizer,
                 audio_paths=audio_paths,
                 transcripts=transcripts,
-                )
+            )
 
     def _parse_manifest_file(self) -> Tuple[list, list]:
         manifest_files = glob.glob(os.path.join(self.manifest_path, "*.tsv"))

@@ -88,7 +88,7 @@ class LibriSpeechManifestPreprocess(ManifestPreprocess):
 
         with open(vocab_file_path, "w", encoding="utf-8") as vocab_file:
             for idx, token in enumerate(tokens):
-                vocab_file.write(token + " " + str(idx) + "\n")
+                vocab_file.write(f'{token}|{str(idx)}\n')
 
 
 def main(args):
@@ -102,3 +102,4 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
     main(args)
+

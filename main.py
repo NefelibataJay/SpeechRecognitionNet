@@ -15,12 +15,10 @@ from util.tokenizer import EnglishCharTokenizer
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="./conf", help="config path")  # config path
 parser.add_argument("-cn", default="configs", help="config name")  # config name
-parser.add_argument("--do-train", action="store_true", help="do train")
-
 args = parser.parse_args()
 
 
-@hydra.main(config_path=args.cp, config_name=args.cn)
+@hydra.main(version_base=None, config_path=args.cp, config_name=args.cn)
 def main(configs: DictConfig):
     device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
     print("Using device", device)
@@ -28,20 +26,22 @@ def main(configs: DictConfig):
     # set seed
     pl.seed_everything(666)
     torch.manual_seed(666)
+    torch.cuda.manual_seed(666)
+    print(configs)
 
     tokenizer = EnglishCharTokenizer(configs.tokenizer)
 
-    configs.model.num_classes = len(tokenizer.vocab)
+    configs.model.encoder.num_classes = len(tokenizer)
 
     data_module = SpeechToTextDataModule(configs.datamodule, tokenizer)
 
     logger = TensorBoardLogger(**configs.logger)
 
-    if args.do_train:
-        model = ConformerCTC(configs.model, tokenizer)
-        trainer = pl.Trainer(progress_bar=True, logger=logger, **configs.trainer)
-        if configs.checkpoint_path:
-            trainer.fit(model, data_module, ckpt_path="some/path/to/my_checkpoint.ckpt")
+    if configs.training.do_train:
+        model = ConformerCTC(configs, tokenizer)
+        trainer = pl.Trainer(logger=logger, **configs.trainer)
+        if configs.training.checkpoint_path is not None:
+            trainer.fit(model, data_module, ckpt_path=configs.training.checkpoint_path)
         else:
             trainer.fit(model, data_module)
     else:
