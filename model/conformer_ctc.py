@@ -6,7 +6,7 @@ from omegaconf import DictConfig
 from torch.nn.utils.rnn import pad_sequence
 from torch.optim import Adam
 
-from model.conformer import Conformer
+from model.conformer.model import Conformer
 from model.modules.BaseModel import BaseModel
 from util.tokenizer import Tokenizer
 from torch.nn import CTCLoss

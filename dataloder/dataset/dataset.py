@@ -47,6 +47,7 @@ class SpeechToTextDataset(Dataset):
         self.audio_paths = audio_paths
         self.transcripts = transcripts
         # TODO add specaugment
+        # TODO add sort
 
     def __len__(self):
         return len(self.audio_paths)

@@ -21,7 +21,7 @@ from .encoder import ConformerEncoder
 from .modules import Linear
 
 
-class Conformer(nn.Module):
+class ConformerModel(nn.Module):
     """
     Conformer: Convolution-augmented Transformer for Speech Recognition
     The paper used a one-lstm Transducer decoder, currently still only implemented
@@ -66,7 +66,7 @@ class Conformer(nn.Module):
             half_step_residual: bool = True,
             joint_ctc_attention: bool = False,
     ) -> None:
-        super(Conformer, self).__init__()
+        super(ConformerModel, self).__init__()
         self.encoder = ConformerEncoder(
             input_dim=input_dim,
             encoder_dim=encoder_dim,

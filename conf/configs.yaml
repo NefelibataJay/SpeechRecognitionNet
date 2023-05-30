@@ -32,7 +32,7 @@ model:
   encoder:
     num_classes: ??
     input_dim: 80
-    encoder_dim: 512
+    encoder_dim: 256
     num_encoder_layers: 2
     num_attention_heads: 8
     feed_forward_expansion_factor: 4
