@@ -13,29 +13,12 @@ from torch.nn import CTCLoss
 from torchmetrics import CharErrorRate, WordErrorRate
 
 
-def get_batch(batch):
-    inputs, input_lengths, targets, target_lengths = batch
-    # inputs [batch_size, time, feature]
-    padded_feats = pad_sequence([b[1] for b in batch], batch_first=True, padding_value=0)
-    padded_feats = pad_sequence([b[1] for b in batch], batch_first=True, padding_value=0)
-
-    batch_size = inputs.size(0)
-    input_dim = inputs.size(2)
-
-    return (
-        inputs,
-        input_lengths,
-        targets,
-        target_lengths,
-    )
-
-
 class ConformerCTC(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
         super(ConformerCTC, self).__init__(configs=configs, tokenizer=tokenizer)
         self.configs = configs
         self.criterion = CTCLoss(blank=configs.model.blank_id)
-        self.val_cer = CharErrorRate(ignore_case=True)
+        self.val_cer = CharErrorRate(ignore_case=True, reduction='mean')
         self.tokenizer = tokenizer
         self.ConformerEncoder = Conformer(**configs.model.encoder)
 
@@ -45,9 +28,9 @@ class ConformerCTC(BaseModel):
         return y_hat
 
     def training_step(self, batch: tuple, batch_idx: int):
-        (inputs, input_lengths, targets, target_lengths,) = self.get_batch(batch)
+        (inputs, input_lengths, targets, target_lengths,) = batch
 
-        outputs = self.ConformerEncoder(inputs, input_lengths)
+        outputs, output_lengths, logits = self.ConformerEncoder(inputs, input_lengths)
         loss = self.criterion(outputs.transpose(0, 1), targets, reduction='mean')
         self.log('train_loss', loss)
         self.log('lr', self.lr)
@@ -55,12 +38,12 @@ class ConformerCTC(BaseModel):
         return {'loss': loss, 'learning_rate': self.lr}
 
     def validation_step(self, batch, batch_idx):
-        (inputs, input_lengths, targets, target_lengths,) = self.get_batch(batch)
+        (inputs, input_lengths, targets, target_lengths,) = batch
 
-        outputs = self.ConformerEncoder(inputs, input_lengths)
-        loss = self.criterion(outputs.transpose(0, 1), targets, reduction='mean')
+        outputs, output_lengths, logits = self.ConformerEncoder(inputs, input_lengths)
+        loss = self.criterion(outputs.transpose(0, 1), targets, )
+
         predicts = self(outputs, dim=-1)
-
         predicts = [self.tokenizer.int2text(sent) for sent in predicts]
         targets = [self.tokenizer.int2text(sent) for sent in targets]
 
@@ -77,9 +60,9 @@ class ConformerCTC(BaseModel):
         return {'loss': loss, 'learning_rate': char_error_rate}
 
     def test_step(self, batch, batch_idx):
-        (inputs, input_lengths, targets, target_lengths,) = self.get_batch(batch)
+        (inputs, input_lengths, targets, target_lengths,) = batch
 
-        outputs = self.ConformerEncoder(inputs, input_lengths)
+        outputs, output_lengths, logits = self.ConformerEncoder(inputs, input_lengths)
         loss = self.criterion(outputs.transpose(0, 1), targets, reduction='mean')
         predicts = self(outputs, dim=-1)
 

@@ -15,7 +15,7 @@ def _collate_fn(batch):
     inputs = [i[0] for i in batch]
 
     input_lengths = torch.IntTensor([i[1] for i in batch])
-    targets = torch.tensor([i[2] for i in batch], dtype=torch.int32)
+    targets = [torch.IntTensor(i[2]) for i in batch]
     target_lengths = torch.IntTensor([i[3] - 1 for i in batch])
 
     inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True, padding_value=0)
@@ -27,6 +27,7 @@ def _collate_fn(batch):
 class SpeechToTextDataModule(pl.LightningDataModule):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer):
         super(SpeechToTextDataModule, self).__init__()
+        self.dataset_path = configs.dataset_path
         self.configs = configs
         self.tokenizer = tokenizer
         self.dataset = dict()
@@ -38,16 +39,24 @@ class SpeechToTextDataModule(pl.LightningDataModule):
         if not configs.one_dataset:
             self.val_set_ratio = configs.val_set_ratio
             self.test_set_ratio = configs.test_set_ratio
-            self.init_dataset()
+            self._init_multi_dataset()
         else:
-            self._parse_dataset()
+            self._init_one_dataset()
 
-    def _parse_dataset(self):
+    def _read_manifest_file(self, manifest_file):
+        audio_paths = list()
+        transcripts = list()
+        with open(manifest_file, 'r', encoding='utf-8') as f:
+            for idx, line in enumerate(f.readlines()):
+                audio_path, transcript = line.split("\t")[0], line.split("\t")[1]
+                transcript = transcript.replace("\n", "")
+                audio_paths.append(os.path.join(self.dataset_path, audio_path))
+                transcripts.append(transcript)
+        return audio_paths, transcripts
+
+    def _init_one_dataset(self):
         for stage in ["train", "valid", "test"]:
-            with open(os.path.join(self.manifest_path, f"{stage}.tsv")) as f:
-                lines = f.readlines()
-                audio_paths = [line.split("\t")[0] for line in lines]
-                transcripts = [line.split("\t")[1].replace("\n", "") for line in lines]
+            audio_paths, transcripts = self._read_manifest_file(os.path.join(self.manifest_path, f"{stage}.tsv"))
             self.dataset[stage] = SpeechToTextDataset(
                 configs=self.configs.dataset,
                 tokenizer=self.tokenizer,
@@ -55,34 +64,28 @@ class SpeechToTextDataModule(pl.LightningDataModule):
                 transcripts=transcripts,
             )
 
-    def _parse_manifest_file(self) -> Tuple[list, list]:
+    def _init_multi_dataset(self):
         manifest_files = glob.glob(os.path.join(self.manifest_path, "*.tsv"))
-        audio_paths = list()
-        transcripts = list()
+        all_audio_paths = list()
+        all_transcripts = list()
         for manifest_file in manifest_files:
-            with open(manifest_file) as f:
-                for idx, line in enumerate(f.readlines()):
-                    audio_path, transcript = line.split("\t")[0], line.split("\t")[1]
-                    transcript = transcript.replace("\n", "")
-                    audio_paths.append(audio_path)
-                    transcripts.append(transcript)
-        return audio_paths, transcripts
+            audio_paths, transcripts = self._read_manifest_file(manifest_file)
+            all_audio_paths.extend(audio_paths)
+            all_transcripts.extend(transcripts)
 
-    def init_dataset(self):
-        audio_paths, transcripts = self._parse_manifest_file()
-        data_num = len(audio_paths)
+        data_num = len(all_audio_paths)
         test_start_idx = data_num - int(data_num * self.test_set_ratio)
         valid_start_idx = test_start_idx - int(data_num * self.val_set_ratio)
 
         audio_paths = {
-            "train": audio_paths[: valid_start_idx],
-            "valid": audio_paths[valid_start_idx: test_start_idx],
-            "test": audio_paths[test_start_idx:],
+            "train": all_audio_paths[: valid_start_idx],
+            "valid": all_audio_paths[valid_start_idx: test_start_idx],
+            "test": all_audio_paths[test_start_idx:],
         }
         transcripts = {
-            "train": transcripts[: valid_start_idx],
-            "valid": transcripts[valid_start_idx: test_start_idx],
-            "test": transcripts[test_start_idx:],
+            "train": all_transcripts[: valid_start_idx],
+            "valid": all_transcripts[valid_start_idx: test_start_idx],
+            "test": all_transcripts[test_start_idx:],
         }
 
         for stage in audio_paths.keys():

@@ -21,7 +21,7 @@ from .feed_forward import FeedForwardModule
 from .attention import MultiHeadedSelfAttentionModule
 from .convolution import (
     ConformerConvModule,
-    Conv2dSubampling,
+    Conv2dSubsampling,
 )
 from .modules import (
     ResidualConnectionModule,
@@ -64,6 +64,7 @@ class ConformerBlock(nn.Module):
             conv_dropout_p: float = 0.1,
             conv_kernel_size: int = 31,
             half_step_residual: bool = True,
+            normalize_before: bool = False,
     ):
         super(ConformerBlock, self).__init__()
         if half_step_residual:
@@ -103,8 +104,12 @@ class ConformerBlock(nn.Module):
                 ),
                 module_factor=self.feed_forward_residual_factor,
             ),
-            nn.LayerNorm(encoder_dim),
         )
+
+        if normalize_before:
+            self.sequential.insert(0, nn.LayerNorm(encoder_dim))
+        else:
+            self.sequential.append(nn.LayerNorm(encoder_dim))
 
     def forward(self, inputs: Tensor) -> Tensor:
         return self.sequential(inputs)
@@ -139,8 +144,8 @@ class ConformerEncoder(nn.Module):
     def __init__(
             self,
             input_dim: int = 80,
-            encoder_dim: int = 512,
-            num_layers: int = 17,
+            encoder_dim: int = 256,
+            num_layers: int = 12,
             num_attention_heads: int = 8,
             feed_forward_expansion_factor: int = 4,
             conv_expansion_factor: int = 2,
@@ -152,7 +157,7 @@ class ConformerEncoder(nn.Module):
             half_step_residual: bool = True,
     ):
         super(ConformerEncoder, self).__init__()
-        self.conv_subsample = Conv2dSubampling(in_channels=1, out_channels=encoder_dim)
+        self.conv_subsample = Conv2dSubsampling(in_channels=1, out_channels=encoder_dim)
         self.input_projection = nn.Sequential(
             Linear(encoder_dim * (((input_dim - 1) // 2 - 1) // 2), encoder_dim),
             nn.Dropout(p=input_dropout_p),

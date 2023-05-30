@@ -33,7 +33,6 @@ class SpeechToTextDataset(Dataset):
         self.num_mel_bins = configs.num_mel_bins
         self.sample_rate = configs.sample_rate
 
-        self.dataset_path = configs.dataset_path
         self.feature_types = configs.feature_types
 
         assert self.feature_types in ["mfcc", "fbank", "spectrogram"], "feature_types not found"
@@ -45,9 +44,9 @@ class SpeechToTextDataset(Dataset):
         elif self.feature_types == "spectrogram":
             self.extract_feature = torchaudio.transforms.Spectrogram(n_fft=400)
 
-        # TODO add specaugment
         self.audio_paths = audio_paths
         self.transcripts = transcripts
+        # TODO add specaugment
 
     def __len__(self):
         return len(self.audio_paths)
@@ -69,10 +68,11 @@ class SpeechToTextDataset(Dataset):
         return transcript
 
     def _parse_audio(self, audio_path):
-        signal = librosa.load(audio_path, sr=self.sample_rate)
+        signal, sr = librosa.load(audio_path, sr=self.sample_rate)
         signal = signal * (1 << 15)
         # TODO speech augmentation
         signal = torch.tensor(signal)
         feature = self.extract_feature(signal)
         feature = feature.transpose(1, 0)
+        # feature [dim, time] -> [time, dim]
         return feature

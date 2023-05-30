@@ -8,11 +8,11 @@ training:
 
 datamodule:
   dataset:
-    dataset_path: E:/datasets/LibriSpeech
     feature_types: fbank
     num_mel_bins: 80
     sample_rate: 1600
 
+  dataset_path: E:/datasets/LibriSpeech
   batch_size: ${training.batch_size}
   one_dataset: True
   val_set_ratio: 0.05
@@ -22,7 +22,7 @@ datamodule:
 
 tokenizer:
   lang: zh
-  word_dict_path: D:\model\rnn-t\libriSpeech_manifest\vocab.txt
+  word_dict_path: D:/model/rnn-t/libriSpeech_manifest/vocab.txt
 
 logger:
   save_dir: tb_logs

@@ -56,14 +56,14 @@ class LibriSpeechManifestPreprocess(ManifestPreprocess):
 
     def generate_manifest_files(self):
         for sub_path in self.LIBRI_SPEECH_DATASETS:
-            if sub_path.startswith("dev"):
-                self.manifest_type = "dev"
-            elif sub_path.startswith("test"):
-                self.manifest_type = "test"
-            else:
-                self.manifest_type = "train"
+            # if sub_path.startswith("dev"):
+            #     self.manifest_type = "valid"
+            # elif sub_path.startswith("test"):
+            #     self.manifest_type = "test"
+            # else:
+            #     self.manifest_type = "train"
 
-            manifest_file_path = os.path.join(self.output_manifest_path, self.manifest_type + ".tsv")
+            manifest_file_path = os.path.join(self.output_manifest_path, sub_path + ".tsv")
             root_path = os.path.join(self.root_path, sub_path)
             if not os.path.exists(root_path):
                 continue
@@ -77,8 +77,9 @@ class LibriSpeechManifestPreprocess(ManifestPreprocess):
                             line = line.strip()
                             audio_id, transcript = line.split(" ", 1)
                             speaker_id, _, _ = audio_id.split("-")
-                            audio_path = os.path.join(os.path.dirname(transcript_path.parent), audio_id + ".flac")
-                            manifest_file.write(audio_path.replace(str(root_path.parent), "") + "\t" +
+                            audio_path = os.path.join(str(transcript_path.parent), audio_id + ".flac")
+                            audio_path = "/".join(audio_path.replace(str(root_path.parent), "").split("\\")[1:])
+                            manifest_file.write(audio_path + "\t" +
                                                 transcript.lower().replace("'", "") + "\t" + speaker_id + "\n")
 
     def generate_character_vocab(self):
@@ -102,4 +103,3 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
     main(args)
-

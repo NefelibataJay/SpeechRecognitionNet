@@ -15,7 +15,7 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
-from typing import Tuple
+from typing import Tuple, Any
 
 from .encoder import ConformerEncoder
 from .modules import Linear
@@ -53,8 +53,8 @@ class Conformer(nn.Module):
             self,
             num_classes: int,
             input_dim: int = 80,
-            encoder_dim: int = 512,
-            num_encoder_layers: int = 17,
+            encoder_dim: int = 256,
+            num_encoder_layers: int = 12,
             num_attention_heads: int = 8,
             feed_forward_expansion_factor: int = 4,
             conv_expansion_factor: int = 2,
@@ -96,7 +96,7 @@ class Conformer(nn.Module):
         """ Update dropout probability of model """
         self.encoder.update_dropout(dropout_p)
 
-    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Any, Any, Any]:
         """
         Forward propagate a `inputs` and `targets` pair for training.
 
@@ -110,5 +110,5 @@ class Conformer(nn.Module):
         """
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         logits = self.fc(encoder_outputs)
-        logits = nn.functional.log_softmax(outputs, dim=-1)
-        return encoder_outputs, encoder_output_lengths
+        logits = nn.functional.log_softmax(logits, dim=-1)
+        return encoder_outputs, encoder_output_lengths, logits
