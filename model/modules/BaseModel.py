@@ -43,20 +43,21 @@ class BaseModel(pl.LightningModule):
             "asgd": ASGD,
         }
 
-        assert self.configs.optimizer.optimizer_name in SUPPORTED_OPTIMIZERS.keys(), (
-            f"Unsupported Optimizer: {self.configs.optimizer.optimizer_name}\n"
+        assert self.configs.training.optimizer_name in SUPPORTED_OPTIMIZERS.keys(), (
+            f"Unsupported Optimizer: {self.configs.training.optimizer_name}\n"
             f"Supported Optimizers: {SUPPORTED_OPTIMIZERS.keys()}"
         )
 
-        self.optimizer = SUPPORTED_OPTIMIZERS[self.configs.optimizer.optimizer_name](
+        self.optimizer = SUPPORTED_OPTIMIZERS[self.configs.training.optimizer_name](
             self.parameters(),
-            lr=self.configs.lr_scheduler.lr,
             **self.configs.optimizer
         )
 
-        if self.configs.lr_scheduler.scheduler_name is None:
-            return [self.optimizer]
+        if self.configs.training.lr_scheduler_name is None:
+            return {'optimizer': self.optimizer}
 
+
+        # TODO add lr_scheduler
         SCHEDULER_REGISTRY = {
             "lambda_lr": LambdaLR,
             "step_lr": StepLR,
@@ -67,14 +68,15 @@ class BaseModel(pl.LightningModule):
             "warmup_reduce_lr_on_plateau": ReduceLROnPlateau,
         }
 
-        assert self.configs.lr_scheduler.scheduler_name in SUPPORTED_OPTIMIZERS.keys(), (
-            f"Unsupported Optimizer: {self.configs.lr_scheduler.scheduler_name}\n"
-            f"Supported Optimizers: {SUPPORTED_OPTIMIZERS.keys()}")
+        assert self.configs.training.lr_scheduler_name in SCHEDULER_REGISTRY.keys(), (
+            f"Unsupported Optimizer: {self.configs.training.lr_scheduler_name}\n"
+            f"Supported Optimizers: {SCHEDULER_REGISTRY.keys()}")
 
-        self.lr_scheduler = SCHEDULER_REGISTRY[self.configs.lr_scheduler.scheduler_name](self.optimizer,
-                                                                                         **self.configs.lr_scheduler)
-        # optim_dict = {'optimizer': self.optimizer, 'lr_scheduler': self.lr_scheduler}
-        return [self.optimizer], [self.lr_scheduler]
+        self.lr_scheduler = SCHEDULER_REGISTRY[self.configs.training.lr_scheduler_name](
+            self.optimizer,
+            **self.configs.lr_scheduler)
+
+        return {'optimizer': self.optimizer, 'lr_scheduler': self.lr_scheduler}
 
     def get_lr(self):
         for g in self.optimizer.param_groups:

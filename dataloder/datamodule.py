@@ -26,7 +26,7 @@ def _collate_fn(batch):
 
 class SpeechToTextDataModule(pl.LightningDataModule):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer):
-        super(SpeechToTextDataModule).__init__()
+        super(SpeechToTextDataModule, self).__init__()
         self.configs = configs
         self.tokenizer = tokenizer
         self.dataset = dict()
@@ -43,7 +43,7 @@ class SpeechToTextDataModule(pl.LightningDataModule):
             self._parse_dataset()
 
     def _parse_dataset(self):
-        for stage in ["train", "dev", "test"]:
+        for stage in ["train", "valid", "test"]:
             with open(os.path.join(self.manifest_path, f"{stage}.tsv")) as f:
                 lines = f.readlines()
                 audio_paths = [line.split("\t")[0] for line in lines]

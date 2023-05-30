@@ -4,7 +4,7 @@ import os
 import torch
 import pytorch_lightning as pl
 import hydra
-from lightning_fabric.loggers import TensorBoardLogger
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from omegaconf import DictConfig
 
 from dataloder.datamodule import SpeechToTextDataModule
@@ -41,9 +41,9 @@ def main(configs: DictConfig):
         model = ConformerCTC(configs, tokenizer)
         trainer = pl.Trainer(logger=logger, **configs.trainer)
         if configs.training.checkpoint_path is not None:
-            trainer.fit(model, data_module, ckpt_path=configs.training.checkpoint_path)
+            trainer.fit(model, datamodule=data_module, ckpt_path=configs.training.checkpoint_path)
         else:
-            trainer.fit(model, data_module)
+            trainer.fit(model, datamodule=data_module)
     else:
         assert configs.checkpoint_path is not None
         model = BaseModel.load_from_checkpoint("/path/to/checkpoint.ckpt")
