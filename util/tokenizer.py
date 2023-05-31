@@ -60,6 +60,12 @@ class EnglishCharTokenizer(Tokenizer):
         return len(self.vocab)
 
 
+class EnglishWordTokenizer(Tokenizer):
+    def __init__(self, configs: DictConfig, pad_token=0, sos_token=1, eos_token=2, blank_token=3):
+        super(EnglishWordTokenizer, self).__init__(configs, pad_token, sos_token, eos_token, blank_token)
+        pass
+
+
 class ChineseCharTokenizer(Tokenizer):
     def __init__(self, configs: DictConfig, pad_token=0, sos_token=1, eos_token=2, blank_token=3):
         super(ChineseCharTokenizer, self).__init__(configs, pad_token, sos_token, eos_token, blank_token)

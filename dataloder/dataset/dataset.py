@@ -62,18 +62,18 @@ class SpeechToTextDataset(Dataset):
 
     def _parse_transcript(self, tokens: str):
         transcript = list()
-        transcript.append(self.sos_id)
+        # transcript.append(self.sos_id)
         transcript.extend(self.tokenizer.text2int(tokens))
         # transcript.append(self.eos_id)
 
         return transcript
 
     def _parse_audio(self, audio_path):
-        signal, sr = librosa.load(audio_path, sr=self.sample_rate)
+        signal, sr = torchaudio.load(audio_path)
         signal = signal * (1 << 15)
         # TODO speech augmentation
-        signal = torch.tensor(signal)
+
         feature = self.extract_feature(signal)
-        feature = feature.transpose(1, 0)
-        # feature [dim, time] -> [time, dim]
+        # feature [1, dim, time] -> [time, dim]
+        feature = feature.squeeze(0).transpose(1, 0)
         return feature

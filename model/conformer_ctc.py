@@ -14,7 +14,7 @@ class ConformerCTC(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
         super(ConformerCTC, self).__init__(configs=configs, tokenizer=tokenizer)
 
-        self.criterion = CTCLoss(blank=configs.model.blank_id,reduction='mean')
+        self.criterion = CTCLoss(blank=configs.model.blank_id, reduction='mean')
         self.val_cer = CharErrorRate(ignore_case=True, reduction='mean')
         self.encoder_configs = self.configs.model.encoder
         self.encoder = ConformerEncoder(
@@ -50,7 +50,7 @@ class ConformerCTC(BaseModel):
         }
 
     def training_step(self, batch: tuple, batch_idx: int):
-        inputs, targets, input_lengths, target_lengths = batch
+        inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
@@ -69,7 +69,7 @@ class ConformerCTC(BaseModel):
         return {'loss': loss, 'learning_rate': self.lr}
 
     def validation_step(self, batch, batch_idx):
-        inputs, input_lengths,targets, target_lengths = batch
+        inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
@@ -85,8 +85,11 @@ class ConformerCTC(BaseModel):
             input_lengths=output_lengths,
             target_lengths=target_lengths,
         )
-        predictions = logits.max(-1)[1]
+
+        predictions = logits.argmax(-1)[1]
+        # TODO beam serach
         predictions = [self.tokenizer.int2text(sent) for sent in predictions]
+
         targets = [self.tokenizer.int2text(sent) for sent in targets]
 
         list_cer = []
@@ -102,7 +105,7 @@ class ConformerCTC(BaseModel):
         return {'loss': loss, 'learning_rate': char_error_rate}
 
     def test_step(self, batch, batch_idx):
-        inputs, targets, input_lengths, target_lengths = batch
+        inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 

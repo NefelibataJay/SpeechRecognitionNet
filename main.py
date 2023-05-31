@@ -10,7 +10,7 @@ from omegaconf import DictConfig
 from dataloder.datamodule import SpeechToTextDataModule
 from model.conformer_ctc import ConformerCTC
 from model.modules.BaseModel import BaseModel
-from util.tokenizer import EnglishCharTokenizer
+from util.tokenizer import EnglishCharTokenizer,ChineseCharTokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="./conf", help="config path")  # config path
@@ -29,7 +29,7 @@ def main(configs: DictConfig):
     torch.cuda.manual_seed(666)
     print(configs)
 
-    tokenizer = EnglishCharTokenizer(configs.tokenizer)
+    tokenizer = ChineseCharTokenizer(configs.tokenizer)
 
     configs.model.num_classes = len(tokenizer)
 

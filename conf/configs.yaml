@@ -12,17 +12,17 @@ datamodule:
     num_mel_bins: 80
     sample_rate: 1600
 
-  dataset_path: E:/datasets/LibriSpeech
+  dataset_path: E:/datasets/data_thchs30
   batch_size: ${training.batch_size}
   one_dataset: True
   val_set_ratio: 0.05
   test_set_ratio: 0.05
   num_workers: 0
-  manifest_path: D:/model/rnn-t/libriSpeech_manifest/
+  manifest_path: D:/model/rnn-t/thchs30_manifest/
 
 tokenizer:
   lang: zh
-  word_dict_path: D:/model/rnn-t/libriSpeech_manifest/vocab.txt
+  word_dict_path: D:/model/rnn-t/thchs30_manifest/vocab.txt
 
 logger:
   save_dir: tb_logs
@@ -32,8 +32,8 @@ model:
   num_classes: ??
   encoder:
     input_dim: 80
-    encoder_dim: 256
-    num_encoder_layers: 2
+    encoder_dim: 512
+    num_encoder_layers: 12
     num_attention_heads: 8
     feed_forward_expansion_factor: 4
     conv_expansion_factor: 2
