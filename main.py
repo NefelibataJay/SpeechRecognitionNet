@@ -31,7 +31,7 @@ def main(configs: DictConfig):
 
     tokenizer = EnglishCharTokenizer(configs.tokenizer)
 
-    configs.model.encoder.num_classes = len(tokenizer)
+    configs.model.num_classes = len(tokenizer)
 
     data_module = SpeechToTextDataModule(configs.datamodule, tokenizer)
 
@@ -39,6 +39,7 @@ def main(configs: DictConfig):
 
     if configs.training.do_train:
         model = ConformerCTC(configs, tokenizer)
+        print(model)
         trainer = pl.Trainer(logger=logger, **configs.trainer)
         if configs.training.checkpoint_path is not None:
             trainer.fit(model, datamodule=data_module, ckpt_path=configs.training.checkpoint_path)

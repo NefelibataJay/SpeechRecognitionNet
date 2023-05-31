@@ -29,8 +29,8 @@ logger:
   name: model_logs
 
 model:
+  num_classes: ??
   encoder:
-    num_classes: ??
     input_dim: 80
     encoder_dim: 256
     num_encoder_layers: 2

@@ -180,7 +180,7 @@ class Conv2dSubsampling(nn.Module):
 
         outputs = outputs.permute(0, 2, 1, 3).contiguous().view(batch_size, t, channels * f)
 
-        # TODO why
+        # transfer true input_length
         output_lengths = input_lengths >> 2
         output_lengths -= 1
 

@@ -16,7 +16,7 @@ def _collate_fn(batch):
 
     input_lengths = torch.IntTensor([i[1] for i in batch])
     targets = [torch.IntTensor(i[2]) for i in batch]
-    target_lengths = torch.IntTensor([i[3] - 1 for i in batch])
+    target_lengths = torch.IntTensor([i[3]-1 for i in batch])
 
     inputs = torch.nn.utils.rnn.pad_sequence(inputs, batch_first=True, padding_value=0)
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0).to(dtype=torch.int)

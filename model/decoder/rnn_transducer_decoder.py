@@ -25,7 +25,7 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 
-from model.conformer.modules import Linear
+from model.encoder.conformer import Linear
 from model.modules.BaseModel import BaseModel
 
 

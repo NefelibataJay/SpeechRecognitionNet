@@ -91,12 +91,60 @@ class LibriSpeechManifestPreprocess(ManifestPreprocess):
             for idx, token in enumerate(tokens):
                 vocab_file.write(f'{token}|{str(idx)}\n')
 
+    def generate_word_vocab(self):
+        # TODO generate word vocab
+        pass
+
+
+class Thchs30Preprocess(ManifestPreprocess):
+    def __init__(self, root_path="../data_thchs30/", output_manifest_path="../manifest", ):
+        super().__init__(root_path, output_manifest_path)
+
+    def generate_manifest_files(self):
+        paths = list(Path(self.root_path).glob("*/*.wav"))
+        audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in paths]
+
+        audio_paths = list()
+        transcripts = list()
+
+        for audio_id in audio_ids:
+            with open(audio_id + ".wav.trn", 'r', encoding='utf-8') as transcript_file:
+                text = transcript_file.readline().strip().replace(" ", "")
+                audio_paths.append(audio_id + ".wav")
+                transcripts.append(text)
+        # TODO generate manifest files
+
+    def generate_character_vocab(self):
+        vocab_file_path = os.path.join(self.output_manifest_path, self.vocab_path + ".txt")
+        special_tokens = ["<pad>", "<sos>", "<eos>", "<blank>", "<unk>"]
+        manifest_files = list(Path(self.output_manifest_path).glob("*.tsv"))
+        tokens = []
+
+        for manifest_file in manifest_files:
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                for line in f.readlines():
+                    line = line.strip()
+                    _, transcript = line.split("\t")
+                    tokens.extend(list(transcript))
+
+        tokens = special_tokens + list(set(tokens))
+        with open(vocab_file_path, "w", encoding="utf-8") as vocab_file:
+            for idx, token in enumerate(tokens):
+                vocab_file.write(f'{token}|{str(idx)}\n')
+
+    def generate_word_vocab(self):
+        pass
+
 
 def main(args):
     if args.dataset == "librispeech":
         manifest_preprocess = LibriSpeechManifestPreprocess(args.dataset_path, args.output_path)
-        manifest_preprocess.generate_manifest_files()
-        manifest_preprocess.generate_character_vocab()
+    elif args.dataset == "thchs30":
+        manifest_preprocess = Thchs30Preprocess(args.dataset_path, args.output_path)
+    else:
+        raise ValueError("dataset not supported")
+    manifest_preprocess.generate_manifest_files()
+    manifest_preprocess.generate_manifest_files()
 
 
 if __name__ == '__main__':
