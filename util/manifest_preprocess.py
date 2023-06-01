@@ -16,7 +16,7 @@ def get_parser():
 
     parser.add_argument(
         "--output-path",
-        default="./manifest",
+        default="./manifests",
         help="percentage of data to use as validation set (between 0 and 1)",
     )
 
@@ -51,7 +51,7 @@ class LibriSpeechManifestPreprocess(ManifestPreprocess):
         "test-other",
     ]
 
-    def __init__(self, root_path="../LibriSpeech/", output_manifest_path="../manifest", ):
+    def __init__(self, root_path="../LibriSpeech/", output_manifest_path="../manifests", ):
         super().__init__(root_path, output_manifest_path)
 
     def generate_manifest_files(self):
@@ -97,7 +97,7 @@ class LibriSpeechManifestPreprocess(ManifestPreprocess):
 
 
 class Thchs30Preprocess(ManifestPreprocess):
-    def __init__(self, root_path="../data_thchs30/", output_manifest_path="../manifest", ):
+    def __init__(self, root_path="../data_thchs30/", output_manifest_path="../manifests", ):
         super().__init__(root_path, output_manifest_path)
 
     def generate_manifest_files(self):
@@ -112,7 +112,7 @@ class Thchs30Preprocess(ManifestPreprocess):
                 text = transcript_file.readline().strip().replace(" ", "")
                 audio_paths.append(audio_id + ".wav")
                 transcripts.append(text)
-        # TODO generate manifest files
+        # TODO generate manifests files
 
     def generate_character_vocab(self):
         vocab_file_path = os.path.join(self.output_manifest_path, self.vocab_path + ".txt")

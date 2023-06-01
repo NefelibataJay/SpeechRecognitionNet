@@ -18,11 +18,11 @@ datamodule:
   val_set_ratio: 0.05
   test_set_ratio: 0.05
   num_workers: 0
-  manifest_path: D:/model/rnn-t/thchs30_manifest/
+  manifest_path: D:/model/rnn-t/manifests/thchs30_manifest/
 
 tokenizer:
   lang: zh
-  word_dict_path: D:/model/rnn-t/thchs30_manifest/vocab.txt
+  word_dict_path: D:/model/rnn-t/manifests/thchs30_manifest/vocab.txt
 
 logger:
   save_dir: tb_logs
