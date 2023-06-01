@@ -48,8 +48,6 @@ class SpeechToTextDataset(Dataset):
         self.transcripts = transcripts
         if spec_aug:
             self.spec_aug = SpecAugment(**configs.spec_aug_conf)
-
-
         # TODO add sort
 
     def __len__(self):
