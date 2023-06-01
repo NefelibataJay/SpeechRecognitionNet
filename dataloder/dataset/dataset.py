@@ -21,7 +21,7 @@ class SpeechToTextDataset(Dataset):
             transcripts: list,
             sos_id: int = 1,
             eos_id: int = 2,
-            # spec_aug=True,
+            spec_aug=True,
             # noise_augment=True,
     ):
         super(SpeechToTextDataset, self).__init__()
@@ -36,7 +36,7 @@ class SpeechToTextDataset(Dataset):
         self.feature_types = configs.feature_types
 
         assert self.feature_types in ["mfcc", "fbank", "spectrogram"], "feature_types not found"
-        # TODO: using k2 to generate feature
+        # TODO: using kaldi to generate feature
         if self.feature_types == "mfcc":
             self.extract_feature = torchaudio.transforms.MFCC(sample_rate=16000, n_mfcc=self.num_mel_bins)
         elif self.feature_types == "fbank":
@@ -46,7 +46,10 @@ class SpeechToTextDataset(Dataset):
 
         self.audio_paths = audio_paths
         self.transcripts = transcripts
-        # TODO add specaugment
+        if spec_aug:
+            self.spec_aug = SpecAugment(**configs.spec_aug_conf)
+
+
         # TODO add sort
 
     def __len__(self):
@@ -70,10 +73,14 @@ class SpeechToTextDataset(Dataset):
 
     def _parse_audio(self, audio_path):
         signal, sr = torchaudio.load(audio_path)
+        if sr != self.sample_rate:
+            signal = torchaudio.functional.resample(signal, sr, self.sample_rate)
+
         signal = signal * (1 << 15)
-        # TODO speech augmentation
 
         feature = self.extract_feature(signal)
+        feature = self.spec_aug(feature)
+
         # feature [1, dim, time] -> [time, dim]
         feature = feature.squeeze(0).transpose(1, 0)
         return feature

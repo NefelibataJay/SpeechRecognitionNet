@@ -11,6 +11,19 @@ datamodule:
     feature_types: fbank
     num_mel_bins: 80
     sample_rate: 1600
+    fbank_conf:
+      num_mel_bins: 80
+      frame_shift: 10
+      frame_length: 25
+      dither: 0.1
+    speed_perturb: False
+    spec_aug: True
+    spec_aug_conf:
+      num_t_mask: 2
+      num_f_mask: 2
+      max_t: 20
+      max_f: 10
+    spec_trim: False
 
   dataset_path: E:/datasets/data_thchs30
   batch_size: ${training.batch_size}
