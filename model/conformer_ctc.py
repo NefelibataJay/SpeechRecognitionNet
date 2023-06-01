@@ -38,6 +38,7 @@ class ConformerCTC(BaseModel):
         self.decoder = None
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
+
         pass
 
     def training_step(self, batch: tuple, batch_idx: int):
@@ -65,11 +66,7 @@ class ConformerCTC(BaseModel):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
         logits = self.fc(encoder_outputs).log_softmax(dim=-1)
-        # logits.transpose(0, 1),targets[:, 1:],output_lengths,target_lengths,
-        # 第一个参数的维度 (Batch, Frames, Classes) -> (Frames, Batch, Classes)
-        # 第二个参数的维度 去掉targets的第一个字符 <sos>
-        # 输出的没有pad过的长度
-        # 去除targets的第一个字符<sos>的长度，因为CTC的输入是不包含<sos>的
+
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
             targets=targets[:, 1:],
@@ -88,12 +85,12 @@ class ConformerCTC(BaseModel):
             self.val_cer.update(i, j)
             list_cer.append(self.val_cer.compute())
 
-        char_error_rate = torch.mean(torch.tensor(list_cer))
+        char_error_rate = torch.mean(torch.tensor(list_cer))*100
 
         self.log('val_loss', loss)
         self.log('val_cer', char_error_rate)
 
-        return {'loss': loss, 'learning_rate': self.get_lr(), 'CER': char_error_rate}
+        return {'val_loss': loss, 'CER': char_error_rate}
 
     def test_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
@@ -109,22 +106,23 @@ class ConformerCTC(BaseModel):
             target_lengths=target_lengths,
         )
 
-        predictions = logits.argmax(-1)
+        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.configs.model.eos_id)
 
-        predictions = [self.tokenizer.int2text(sent) for sent in predictions]
-        targets = [self.tokenizer.int2text(sent) for sent in targets]
+        predictions = [self.tokenizer.int2text(sent) for sent in hyps]
+
+        targets = [self.tokenizer.int2text(remove_pad(sent)) for sent in targets]
 
         list_cer = []
         for i, j in zip(predictions, targets):
             self.val_cer.update(i, j)
             list_cer.append(self.val_cer.compute())
 
-        char_error_rate = torch.mean(torch.tensor(list_cer))
+        char_error_rate = torch.mean(torch.tensor(list_cer))*100
 
         self.log('val_loss', loss)
         self.log('val_cer', char_error_rate)
 
-        return {'loss': loss, 'learning_rate': char_error_rate}
+        return {'test_loss': loss, 'CER': char_error_rate}
 
     def recognize(self):
         pass

@@ -4,17 +4,17 @@ import os
 import torch
 import pytorch_lightning as pl
 import hydra
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from omegaconf import DictConfig
 
 from dataloder.datamodule import SpeechToTextDataModule
 from model.conformer_ctc import ConformerCTC
-from model.modules.BaseModel import BaseModel
-from util.tokenizer import EnglishCharTokenizer,ChineseCharTokenizer
+from util.tokenizer import EnglishCharTokenizer, ChineseCharTokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="./conf", help="config path")  # config path
-parser.add_argument("-cn", default="configs", help="config name")  # config name
+parser.add_argument("-cn", default="conformer_ctc_configs", help="config name")  # config name
 args = parser.parse_args()
 
 
@@ -37,17 +37,22 @@ def main(configs: DictConfig):
 
     logger = TensorBoardLogger(**configs.logger)
 
+    checkpoint_callback = ModelCheckpoint(monitor="val_loss")
+
     if configs.training.do_train:
         model = ConformerCTC(configs, tokenizer)
         print(model)
-        trainer = pl.Trainer(logger=logger, **configs.trainer)
+        trainer = pl.Trainer(logger=logger, callbacks=[checkpoint_callback], **configs.trainer)
         if configs.training.checkpoint_path is not None:
-            trainer.fit(model, datamodule=data_module, ckpt_path=configs.training.checkpoint_path)
+            trainer.fit(model, datamodule=data_module, ckpt_path=configs.training.checkpoint_path, )
         else:
-            trainer.fit(model, datamodule=data_module)
+            trainer.fit(model, datamodule=data_module, )
+
+        trainer.save_checkpoint("final.ckpt")
     else:
-        assert configs.checkpoint_path is not None
-        model = BaseModel.load_from_checkpoint("/path/to/checkpoint.ckpt")
+        assert configs.training.checkpoint_path is not None
+
+        model = ConformerCTC.load_from_checkpoint(configs.training.checkpoint_path)
         model.eval()
 
 

@@ -25,11 +25,10 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 
-from model.encoder.conformer import Linear
-from model.modules.BaseModel import BaseModel
+from model.encoder.conformer.modules import Linear
 
 
-class RNNTransducerDecoder(BaseModel):
+class RNNTransducerDecoder(nn.Module):
     r"""
     Decoder of RNN-Transducer
 
