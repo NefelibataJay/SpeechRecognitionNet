@@ -13,7 +13,7 @@ from model.conformer_ctc import ConformerCTC
 from util.tokenizer import EnglishCharTokenizer, ChineseCharTokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
-parser.add_argument("-cp", default="./conf", help="config path")  # config path
+parser.add_argument("-cp", default="../conf", help="config path")  # config path
 parser.add_argument("-cn", default="conformer_ctc_configs", help="config name")  # config name
 args = parser.parse_args()
 

@@ -10,20 +10,26 @@ datamodule:
   dataset:
     feature_types: fbank
     num_mel_bins: 80
-    sample_rate: 1600
+    sample_rate: 16000
     fbank_conf:
-      num_mel_bins: 80
+      num_mel_bins: ${datamodule.dataset.num_mel_bins}
       frame_shift: 10
       frame_length: 25
       dither: 0.1
     speed_perturb: False
     spec_aug: True
     spec_aug_conf:
+      max_t_mask: 20
+      max_f_mask: 10
       num_t_mask: 2
       num_f_mask: 2
-      max_t: 20
-      max_f: 10
+    spec_sub: False
+    spec_sub_conf:
+      num_t_sub: 3
+      max_t: 30
     spec_trim: False
+    spec_trim_conf:
+      max_t: 50
 
   dataset_path: E:/datasets/data_thchs30
   batch_size: ${training.batch_size}
@@ -38,13 +44,13 @@ tokenizer:
   word_dict_path: D:/model/rnn-t/manifests/thchs30_manifest/vocab.txt
 
 logger:
-  save_dir: tb_logs
+  save_dir: ../tb_logs
   name: model_logs
 
 model:
   num_classes: ??
   encoder:
-    input_dim: 80
+    input_dim: ${datamodule.dataset.num_mel_bins}
     encoder_dim: 512
     num_encoder_layers: 12
     num_attention_heads: 8
@@ -63,7 +69,6 @@ model:
   eos_id: 2
   blank_id: 3
   unk_id: 4
-
   grad_ckpt_batchsize: 4
 
 trainer:
@@ -80,7 +85,7 @@ trainer:
 
 optimizer:
   lr: 0.001
-  betas: [0.9, 0.98]
+  betas: [ 0.9, 0.98 ]
   weight_decay: 1e-3
 
 lr_scheduler:

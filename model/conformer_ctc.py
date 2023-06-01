@@ -38,8 +38,17 @@ class ConformerCTC(BaseModel):
         self.decoder = None
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
-
-        pass
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
+        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
+        loss = self.criterion(
+            log_probs=logits.transpose(0, 1),
+            targets=targets[:, 1:],
+            input_lengths=output_lengths,
+            target_lengths=target_lengths,
+        )
+        self.log('train_loss', loss)
+        self.log('lr', self.get_lr())
+        return {'loss': loss, 'learning_rate': self.get_lr()}
 
     def training_step(self, batch: tuple, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -56,9 +65,9 @@ class ConformerCTC(BaseModel):
         )
 
         self.log('train_loss', loss)
-        self.log('lr', self.lr)
+        self.log('lr', self.get_lr())
 
-        return {'loss': loss, 'learning_rate': self.lr}
+        return {'loss': loss, 'learning_rate': self.get_lr()}
 
     def validation_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch

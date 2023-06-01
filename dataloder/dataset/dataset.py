@@ -1,14 +1,11 @@
-from typing import Tuple
-
 import torch
 import torchaudio
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 import librosa
 import os
-import glob
 
-from util.audio_augment import SpecAugment
+from tool.data_augmentations.speech_augment import SpeechAugment
 from util.tokenizer import Tokenizer
 
 
@@ -47,8 +44,9 @@ class SpeechToTextDataset(Dataset):
         self.audio_paths = audio_paths
         self.transcripts = transcripts
         if spec_aug:
-            self.spec_aug = SpecAugment(**configs.spec_aug_conf)
+            self.spec_aug = SpeechAugment(**configs.spec_aug_conf)
         # TODO add sort
+        # TODO add noise_augment
 
     def __len__(self):
         return len(self.audio_paths)
@@ -63,7 +61,7 @@ class SpeechToTextDataset(Dataset):
 
     def _parse_transcript(self, tokens: str):
         transcript = list()
-        # transcript.append(self.sos_id)
+        transcript.append(self.sos_id)
         transcript.extend(self.tokenizer.text2int(tokens))
         # transcript.append(self.eos_id)
 
@@ -71,6 +69,7 @@ class SpeechToTextDataset(Dataset):
 
     def _parse_audio(self, audio_path):
         signal, sr = torchaudio.load(audio_path)
+
         if sr != self.sample_rate:
             signal = torchaudio.functional.resample(signal, sr, self.sample_rate)
 
@@ -81,4 +80,8 @@ class SpeechToTextDataset(Dataset):
 
         # feature [1, dim, time] -> [time, dim]
         feature = feature.squeeze(0).transpose(1, 0)
+
+        # spec_sub(feature)
+        # spec_trim(feature)
+
         return feature
