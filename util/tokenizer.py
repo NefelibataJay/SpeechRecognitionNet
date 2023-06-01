@@ -16,10 +16,10 @@ class Tokenizer:
         self.vocab = {}
         self.id_dict = {}
 
-    def text2int(self, tokens: str):
+    def text2int(self, tokens):
         pass
 
-    def int2text(self, t: torch.Tensor):
+    def int2text(self, t):
         pass
 
     def __len__(self):

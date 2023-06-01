@@ -5,6 +5,8 @@ from omegaconf import DictConfig
 from model.encoder.conformer.encoder import ConformerEncoder
 from model.encoder.conformer.modules import Linear
 from model.modules.BaseModel import BaseModel
+from tool.search.greedy_search import greedy_search
+from tool.search.search_common import remove_duplicates_and_blank, remove_pad
 from util.tokenizer import Tokenizer
 from torch.nn import CTCLoss
 from torchmetrics import CharErrorRate
@@ -33,21 +35,10 @@ class ConformerCTC(BaseModel):
         )
 
         self.fc = Linear(self.encoder_configs.encoder_dim, self.configs.model.num_classes, bias=False)
+        self.decoder = None
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
-        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-        logits = encoder_outputs
-        logits = self.fc(logits).log_softmax(dim=-1)
-
-        if self.decoder is not None:
-            y_hats = self.decoder(logits)
-        else:
-            y_hats = logits.max(-1)[1]
-        return {
-            "predictions": y_hats,
-            "logits": logits,
-            "output_lengths": output_lengths,
-        }
+        pass
 
     def training_step(self, batch: tuple, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -77,7 +68,7 @@ class ConformerCTC(BaseModel):
         # logits.transpose(0, 1),targets[:, 1:],output_lengths,target_lengths,
         # 第一个参数的维度 (Batch, Frames, Classes) -> (Frames, Batch, Classes)
         # 第二个参数的维度 去掉targets的第一个字符 <sos>
-        #
+        # 输出的没有pad过的长度
         # 去除targets的第一个字符<sos>的长度，因为CTC的输入是不包含<sos>的
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
@@ -86,11 +77,11 @@ class ConformerCTC(BaseModel):
             target_lengths=target_lengths,
         )
 
-        predictions = logits.argmax(-1)[1]
-        # TODO beam serach
-        predictions = [self.tokenizer.int2text(sent) for sent in predictions]
+        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.configs.model.eos_id)
 
-        targets = [self.tokenizer.int2text(sent) for sent in targets]
+        predictions = [self.tokenizer.int2text(sent) for sent in hyps]
+
+        targets = [self.tokenizer.int2text(remove_pad(sent)) for sent in targets]
 
         list_cer = []
         for i, j in zip(predictions, targets):
@@ -102,7 +93,7 @@ class ConformerCTC(BaseModel):
         self.log('val_loss', loss)
         self.log('val_cer', char_error_rate)
 
-        return {'loss': loss, 'learning_rate': char_error_rate}
+        return {'loss': loss, 'learning_rate': self.get_lr(), 'CER': char_error_rate}
 
     def test_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
@@ -117,7 +108,9 @@ class ConformerCTC(BaseModel):
             input_lengths=output_lengths,
             target_lengths=target_lengths,
         )
-        predictions = logits.max(-1)[1]
+
+        predictions = logits.argmax(-1)
+
         predictions = [self.tokenizer.int2text(sent) for sent in predictions]
         targets = [self.tokenizer.int2text(sent) for sent in targets]
 
@@ -132,3 +125,6 @@ class ConformerCTC(BaseModel):
         self.log('val_cer', char_error_rate)
 
         return {'loss': loss, 'learning_rate': char_error_rate}
+
+    def recognize(self):
+        pass
