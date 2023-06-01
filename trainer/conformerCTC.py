@@ -4,7 +4,7 @@ import os
 import torch
 import pytorch_lightning as pl
 import hydra
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from omegaconf import DictConfig
 
@@ -38,17 +38,23 @@ def main(configs: DictConfig):
     logger = TensorBoardLogger(**configs.logger)
 
     checkpoint_callback = ModelCheckpoint(monitor="val_loss")
+    # checkpoint_callback = ModelCheckpoint(monitor='val_loss', dirpath='my/path/',
+    #                                       filename='sample-mnist-{epoch:02d}-{val_loss:.2f}')
+
+    early_stop_callback = EarlyStopping(
+        monitor='val_loss',
+        min_delta=0.00,
+        patience=3,
+    )
 
     if configs.training.do_train:
         model = ConformerCTC(configs, tokenizer)
         print(model)
-        trainer = pl.Trainer(logger=logger, callbacks=[checkpoint_callback], **configs.trainer)
+        trainer = pl.Trainer(logger=logger, callbacks=[checkpoint_callback, early_stop_callback], **configs.trainer)
         if configs.training.checkpoint_path is not None:
             trainer.fit(model, datamodule=data_module, ckpt_path=configs.training.checkpoint_path, )
         else:
             trainer.fit(model, datamodule=data_module, )
-
-        trainer.save_checkpoint("final.ckpt")
     else:
         assert configs.training.checkpoint_path is not None
 

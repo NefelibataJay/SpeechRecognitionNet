@@ -80,8 +80,8 @@ trainer:
   gradient_clip_val: 4.0
   gradient_clip_algorithm: norm
   detect_anomaly: True
+  default_root_dir: ../checkpoints
 #  sync_batchnorm: True
-#  default_root_dir: ./logs
 
 optimizer:
   lr: 0.001
