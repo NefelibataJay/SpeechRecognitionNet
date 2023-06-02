@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 from omegaconf import DictConfig
 
-from model.encoder.conformer.encoder import ConformerEncoder
+from model.encoder.conformer.conformer_encoder import ConformerEncoder
 from model.encoder.conformer.modules import Linear
 from model.modules.BaseModel import BaseModel
 from tool.search.greedy_search import greedy_search

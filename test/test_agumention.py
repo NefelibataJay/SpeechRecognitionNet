@@ -26,7 +26,7 @@ if __name__ == '__main__':
     wav_path = "E:/datasets/data_thchs30/data/A2_0.wav"
     waveform, sample_rate = torchaudio.load(wav_path)
 
-    spec_aug = SpeechAugment()
+    spec_aug = SpecAugment()
     # waveform = speed_perturb(waveform, sample_rate)
 
     n_mels = 80

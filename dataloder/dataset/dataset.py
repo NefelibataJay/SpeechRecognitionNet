@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 import librosa
 import os
 
-from tool.data_augmentations.speech_augment import SpeechAugment
+from tool.data_augmentations.speech_augment import SpecAugment
 from util.tokenizer import Tokenizer
 
 
@@ -44,7 +44,7 @@ class SpeechToTextDataset(Dataset):
         self.audio_paths = audio_paths
         self.transcripts = transcripts
         if spec_aug:
-            self.spec_aug = SpeechAugment(**configs.spec_aug_conf)
+            self.spec_aug = SpecAugment(**configs.spec_aug_conf)
         # TODO add sort
         # TODO add noise_augment
 
