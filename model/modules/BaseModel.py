@@ -49,7 +49,7 @@ class BaseModel(pl.LightningModule):
         )
 
         self.optimizer = SUPPORTED_OPTIMIZERS[self.configs.training.optimizer_name](
-            self.parameters(),
+            [{'params': self.parameters(), 'initial_lr': self.configs.optimizer.lr}],
             **self.configs.optimizer
         )
 

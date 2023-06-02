@@ -37,9 +37,13 @@ def main(configs: DictConfig):
 
     logger = TensorBoardLogger(**configs.logger)
 
-    checkpoint_callback = ModelCheckpoint(monitor="val_loss")
-    # checkpoint_callback = ModelCheckpoint(monitor='val_loss', dirpath='my/path/',
-    #                                       filename='sample-mnist-{epoch:02d}-{val_loss:.2f}')
+    checkpoint_callback = ModelCheckpoint(monitor="val_loss",
+                                          save_top_k=3,
+                                          dirpath=configs.trainer.default_root_dir,
+                                          filename='conformer_ctc-{epoch:02d}-{val_loss:.2f}',
+                                          mode='min',
+                                          save_last=True,
+                                          )
 
     early_stop_callback = EarlyStopping(
         monitor='val_loss',

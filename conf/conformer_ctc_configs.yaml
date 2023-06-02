@@ -1,10 +1,10 @@
 training:
   do_train: True
-  checkpoint_path:
+  checkpoint_path: # ../checkpoints/**.ckpt
   batch_size: 24
   max_epoch: 50
   optimizer_name: adam
-  lr_scheduler_name:
+  lr_scheduler_name: exponential_lr
 
 datamodule:
   dataset:
@@ -45,7 +45,7 @@ tokenizer:
 
 logger:
   save_dir: ../tb_logs
-  name: model_logs
+  name: conformer_ctc
 
 model:
   num_classes: ??
