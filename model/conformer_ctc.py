@@ -34,28 +34,17 @@ class ConformerCTC(BaseModel):
             half_step_residual=self.encoder_configs.half_step_residual,
         )
 
-        self.fc = Linear(self.encoder_configs.encoder_dim, self.configs.model.num_classes, bias=False)
         self.decoder = None
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
-        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
-        loss = self.criterion(
-            log_probs=logits.transpose(0, 1),
-            targets=targets[:, 1:],
-            input_lengths=output_lengths,
-            target_lengths=target_lengths,
-        )
-        self.log('train_loss', loss)
-        self.log('lr', self.get_lr())
-        return {'loss': loss, 'learning_rate': self.get_lr()}
+        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+
+        return logits
 
     def training_step(self, batch: tuple, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-
-        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
+        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
 
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
@@ -72,9 +61,7 @@ class ConformerCTC(BaseModel):
     def validation_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-
-        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
+        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
 
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
@@ -94,7 +81,7 @@ class ConformerCTC(BaseModel):
             self.val_cer.update(i, j)
             list_cer.append(self.val_cer.compute())
 
-        char_error_rate = torch.mean(torch.tensor(list_cer))*100
+        char_error_rate = torch.mean(torch.tensor(list_cer)) * 100
 
         self.log('val_loss', loss)
         self.log('val_cer', char_error_rate)
@@ -104,9 +91,7 @@ class ConformerCTC(BaseModel):
     def test_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-
-        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
+        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
 
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
@@ -126,7 +111,7 @@ class ConformerCTC(BaseModel):
             self.val_cer.update(i, j)
             list_cer.append(self.val_cer.compute())
 
-        char_error_rate = torch.mean(torch.tensor(list_cer))*100
+        char_error_rate = torch.mean(torch.tensor(list_cer)) * 100
 
         self.log('val_loss', loss)
         self.log('val_cer', char_error_rate)

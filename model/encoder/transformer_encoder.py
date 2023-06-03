@@ -3,7 +3,10 @@ from typing import Tuple
 import torch
 from torch import nn, Tensor
 
-from model.encoder.transformer.modules import *
+from model.modules.attention import MultiHeadAttention
+from model.modules.embedding import PositionalEncoding
+from model.modules.feed_forward import PositionwiseFeedForward
+from model.modules.mask import get_attn_pad_mask
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -33,7 +36,7 @@ class TransformerEncoderLayer(nn.Module):
             d_model: int = 512,
             num_heads: int = 8,
             d_ff: int = 2048,
-            dropout_p: float = 0.3,
+            dropout_p: float = 0.1,
     ) -> None:
         super(TransformerEncoderLayer, self).__init__()
         self.attention_norm = nn.LayerNorm(d_model)
