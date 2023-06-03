@@ -17,13 +17,13 @@ import torch.nn as nn
 from torch import Tensor
 from typing import Tuple
 
-from .feed_forward import FeedForwardModule
-from .attention import MultiHeadedSelfAttentionModule
-from .convolution import (
+from model.modules.feed_forward import FeedForwardModule
+from model.modules.attention import MultiHeadedSelfAttentionModule
+from model.modules.convolution import (
     ConformerConvModule,
     Conv2dSubsampling,
 )
-from .modules import (
+from model.modules.modules import (
     ResidualConnectionModule,
     Linear,
 )
@@ -53,6 +53,7 @@ class ConformerBlock(nn.Module):
     Returns: outputs
         - **outputs** (batch, time, dim): Tensor produces by conformer block.
     """
+
     def __init__(
             self,
             encoder_dim: int = 512,
@@ -141,6 +142,7 @@ class ConformerEncoder(nn.Module):
         - **outputs** (batch, out_channels, time): Tensor produces by conformer encoder.
         - **output_lengths** (batch): list of sequence output lengths
     """
+
     def __init__(
             self,
             input_dim: int = 80,
@@ -155,6 +157,7 @@ class ConformerEncoder(nn.Module):
             conv_dropout_p: float = 0.1,
             conv_kernel_size: int = 31,
             half_step_residual: bool = True,
+            ctc: bool = True,
     ):
         super(ConformerEncoder, self).__init__()
         self.conv_subsample = Conv2dSubsampling(in_channels=1, out_channels=encoder_dim)
@@ -174,6 +177,10 @@ class ConformerEncoder(nn.Module):
             half_step_residual=half_step_residual,
         ) for _ in range(num_layers)])
 
+        self.ctc = ctc
+        if self.ctc:
+            self.fc = Linear(self.encoder_configs.encoder_dim, self.configs.model.num_classes, bias=False)
+
     def count_parameters(self) -> int:
         """ Count parameters of encoder """
         return sum([p.numel() for p in self.parameters()])
@@ -184,7 +191,7 @@ class ConformerEncoder(nn.Module):
             if isinstance(child, nn.Dropout):
                 child.p = dropout_p
 
-    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         """
         Forward propagate a `inputs` for  encoder training.
 
@@ -200,10 +207,14 @@ class ConformerEncoder(nn.Module):
                 ``(batch, seq_length, dimension)``
             * output_lengths (torch.LongTensor): The length of output tensor. ``(batch)``
         """
+        logits = None
         outputs, output_lengths = self.conv_subsample(inputs, input_lengths)
         outputs = self.input_projection(outputs)
 
         for layer in self.layers:
             outputs = layer(outputs)
 
-        return outputs, output_lengths
+        if self.ctc:
+            logits = self.fc(outputs).log_softmax(dim=-1)
+
+        return outputs, output_lengths, logits

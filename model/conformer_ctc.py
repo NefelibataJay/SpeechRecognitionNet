@@ -2,11 +2,11 @@ import torch
 from torch import Tensor
 from omegaconf import DictConfig
 
-from model.encoder.conformer.conformer_encoder import ConformerEncoder
-from model.encoder.conformer.modules import Linear
-from model.modules.BaseModel import BaseModel
+from model.encoder.conformer_encoder import ConformerEncoder
+from model.modules.modules import Linear
+from model.BaseModel import BaseModel
 from tool.search.greedy_search import greedy_search
-from tool.search.search_common import remove_duplicates_and_blank, remove_pad
+from tool.search.search_common import remove_pad
 from util.tokenizer import Tokenizer
 from torch.nn import CTCLoss
 from torchmetrics import CharErrorRate

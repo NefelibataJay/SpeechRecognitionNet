@@ -1,11 +1,8 @@
-import torch
 import torchaudio.compliance.kaldi as kaldi
 import torchaudio
 
 import soundfile
 import librosa
-
-from model.encoder.conformer.convolution import Conv2dSubsampling
 
 if __name__ == "__main__":
     file = "E:/datasets/data_thchs30/data/A2_0.wav"

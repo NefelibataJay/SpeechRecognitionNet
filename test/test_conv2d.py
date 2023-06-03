@@ -1,6 +1,6 @@
 import torch
 
-from model.encoder.conformer.convolution import Conv2dSubsampling
+from model.modules.convolution import Conv2dSubsampling
 
 if __name__ == "__main__":
     cov = Conv2dSubsampling(in_channels=1, out_channels=256)

@@ -25,7 +25,7 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 
-from model.encoder.conformer.modules import Linear
+from model.modules.modules import Linear
 
 
 class RNNTransducerDecoder(nn.Module):
