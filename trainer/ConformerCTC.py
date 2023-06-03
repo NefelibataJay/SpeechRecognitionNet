@@ -7,6 +7,7 @@ import hydra
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from omegaconf import DictConfig
+from torch import nn
 
 from dataloder.datamodule import SpeechToTextDataModule
 from model.conformer_ctc import ConformerCTC
@@ -53,6 +54,9 @@ def main(configs: DictConfig):
 
     if configs.training.do_train:
         model = ConformerCTC(configs, tokenizer)
+        for p in model.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
         print(model)
         trainer = pl.Trainer(logger=logger, callbacks=[checkpoint_callback, early_stop_callback], **configs.trainer)
         if configs.training.checkpoint_path is not None:
