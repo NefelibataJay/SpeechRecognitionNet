@@ -61,9 +61,10 @@ class SpeechToTextDataset(Dataset):
 
     def _parse_transcript(self, tokens: str):
         transcript = list()
+        # add sos and eos
         transcript.append(self.sos_id)
         transcript.extend(self.tokenizer.text2int(tokens))
-        # transcript.append(self.eos_id)
+        transcript.append(self.eos_id)
 
         return transcript
 

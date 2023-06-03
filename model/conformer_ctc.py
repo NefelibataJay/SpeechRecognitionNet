@@ -65,9 +65,9 @@ class ConformerCTC(BaseModel):
 
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
-            targets=targets[:, 1:],
+            targets=targets[:, 1:-1],  # remove sos, eos
             input_lengths=output_lengths,
-            target_lengths=target_lengths,
+            target_lengths=target_lengths - 2,  # remove sos, eos
         )
 
         hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.configs.model.eos_id)
