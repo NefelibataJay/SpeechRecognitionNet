@@ -7,6 +7,7 @@ from model.modules.attention import MultiHeadAttention
 from model.modules.embedding import PositionalEncoding
 from model.modules.feed_forward import PositionwiseFeedForward
 from model.modules.mask import get_attn_pad_mask
+from model.modules.modules import Linear
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -82,7 +83,7 @@ class TransformerEncoder(nn.Module):
         num_layers: number of encoders layers (default: 6)
         num_heads: number of attention heads (default: 8)
         dropout_p:  probability of dropout (default: 0.3)
-        joint_ctc_attention (bool, optional): flag indication joint ctc attention or not
+        joint_ctc (bool, optional): flag indication joint ctc attention or not
 
     Inputs:
         - **inputs**: list of sequences, whose length is the batch size and within which each sequence is list of tokens
@@ -110,12 +111,12 @@ class TransformerEncoder(nn.Module):
             num_layers: int = 6,
             num_heads: int = 8,
             dropout_p: float = 0.1,
-            joint_ctc_attention: bool = False,
+            joint_ctc: bool = False,
     ) -> None:
         super(TransformerEncoder, self).__init__()
 
         self.num_classes = num_classes
-        self.joint_ctc_attention = joint_ctc_attention
+        self.joint_ctc = joint_ctc
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -135,12 +136,15 @@ class TransformerEncoder(nn.Module):
                 for _ in range(num_layers)
             ]
         )
+        self.joint_ctc = joint_ctc
+        if self.joint_ctc:
+            self.fc = Linear(self.encoder_configs.encoder_dim, self.configs.model.num_classes, bias=False)
 
     def forward(
             self,
             inputs: Tensor,
             input_lengths: Tensor,
-    ) -> Tuple[Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor, Tensor]:
         r"""
         Forward propagate a `inputs` for  encoders training.
 
@@ -157,8 +161,7 @@ class TransformerEncoder(nn.Module):
                 If joint_ctc_attention is False, return None. ``(batch, seq_length, num_classes)``
             * output_lengths: The length of encoders outputs. ``(batch)``
         """
-        encoder_logits = None
-
+        logits = 0
         self_attn_mask = get_attn_pad_mask(inputs, input_lengths, inputs.size(1))
 
         outputs = self.input_norm(self.input_proj(inputs))
@@ -168,4 +171,8 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             outputs, attn = layer(outputs, self_attn_mask)
 
-        return outputs, input_lengths
+        if self.joint_ctc:
+            outputs = nn.Dropout(outputs)
+            logits = self.fc(outputs).log_softmax(dim=-1)
+
+        return outputs, input_lengths, logits

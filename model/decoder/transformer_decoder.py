@@ -4,6 +4,7 @@ from typing import Tuple, Optional
 import torch
 from torch import nn, Tensor
 
+from model.modules.attention import MultiHeadAttention
 from model.modules.embedding import PositionalEncoding, TransformerEmbedding
 from model.modules.feed_forward import PositionwiseFeedForward
 from model.modules.mask import get_attn_pad_mask, get_attn_subsequent_mask
@@ -39,11 +40,11 @@ class TransformerDecoderLayer(nn.Module):
     """
 
     def __init__(
-        self,
-        d_model: int = 512,
-        num_heads: int = 8,
-        d_ff: int = 2048,
-        dropout_p: float = 0.3,
+            self,
+            d_model: int = 512,
+            num_heads: int = 8,
+            d_ff: int = 2048,
+            dropout_p: float = 0.3,
     ) -> None:
         super(TransformerDecoderLayer, self).__init__()
         self.self_attention_norm = nn.LayerNorm(d_model)
@@ -54,11 +55,11 @@ class TransformerDecoderLayer(nn.Module):
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout_p)
 
     def forward(
-        self,
-        inputs: Tensor,
-        encoder_outputs: Tensor,
-        self_attn_mask: Optional[Tensor] = None,
-        encoder_attn_mask: Optional[Tensor] = None,
+            self,
+            inputs: Tensor,
+            encoder_outputs: Tensor,
+            self_attn_mask: Optional[Tensor] = None,
+            encoder_attn_mask: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor, Tensor]:
         r"""
         Forward propagate transformer decoder layer.
@@ -112,17 +113,17 @@ class TransformerDecoder(nn.Module):
     """
 
     def __init__(
-        self,
-        num_classes: int,
-        d_model: int = 512,
-        d_ff: int = 512,
-        num_layers: int = 6,
-        num_heads: int = 8,
-        dropout_p: float = 0.3,
-        pad_id: int = 0,
-        sos_id: int = 1,
-        eos_id: int = 2,
-        max_length: int = 128,
+            self,
+            num_classes: int,
+            d_model: int = 512,
+            d_ff: int = 512,
+            num_layers: int = 6,
+            num_heads: int = 8,
+            dropout_p: float = 0.3,
+            pad_id: int = 0,
+            sos_id: int = 1,
+            eos_id: int = 2,
+            max_length: int = 128,
     ) -> None:
         super(TransformerDecoder, self).__init__()
         self.d_model = d_model
@@ -155,12 +156,12 @@ class TransformerDecoder(nn.Module):
         )
 
     def forward_step(
-        self,
-        decoder_inputs: torch.Tensor,
-        decoder_input_lengths: torch.Tensor,
-        encoder_outputs: torch.Tensor,
-        encoder_output_lengths: torch.Tensor,
-        positional_encoding_length: int,
+            self,
+            decoder_inputs: torch.Tensor,
+            decoder_input_lengths: torch.Tensor,
+            encoder_outputs: torch.Tensor,
+            encoder_output_lengths: torch.Tensor,
+            positional_encoding_length: int,
     ) -> torch.Tensor:
         dec_self_attn_pad_mask = get_attn_pad_mask(decoder_inputs, decoder_input_lengths, decoder_inputs.size(1))
         dec_self_attn_subsequent_mask = get_attn_subsequent_mask(decoder_inputs)
@@ -182,12 +183,12 @@ class TransformerDecoder(nn.Module):
         return outputs
 
     def forward(
-        self,
-        encoder_outputs: torch.Tensor,
-        targets: Optional[torch.LongTensor] = None,
-        encoder_output_lengths: torch.Tensor = None,
-        target_lengths: torch.Tensor = None,
-        teacher_forcing_ratio: float = 1.0,
+            self,
+            encoder_outputs: torch.Tensor,
+            targets: Optional[torch.LongTensor] = None,
+            encoder_output_lengths: torch.Tensor = None,
+            target_lengths: torch.Tensor = None,
+            teacher_forcing_ratio: float = 1.0,
     ) -> torch.Tensor:
         r"""
         Forward propagate a `encoder_outputs` for training.
@@ -209,7 +210,7 @@ class TransformerDecoder(nn.Module):
         use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
         if targets is not None and use_teacher_forcing:
-            targets = targets[targets != self.eos_id].view(batch_size, -1)
+            targets = targets[targets != self.eos_id].view(batch_size, -1)  # remove eos
             target_length = targets.size(1)
 
             step_outputs = self.forward_step(

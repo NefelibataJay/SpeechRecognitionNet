@@ -157,7 +157,7 @@ class ConformerEncoder(nn.Module):
             conv_dropout_p: float = 0.1,
             conv_kernel_size: int = 31,
             half_step_residual: bool = True,
-            ctc: bool = True,
+            joint_ctc: bool = True,
     ):
         super(ConformerEncoder, self).__init__()
         self.conv_subsample = Conv2dSubsampling(in_channels=1, out_channels=encoder_dim)
@@ -177,8 +177,8 @@ class ConformerEncoder(nn.Module):
             half_step_residual=half_step_residual,
         ) for _ in range(num_layers)])
 
-        self.ctc = ctc
-        if self.ctc:
+        self.joint_ctc = joint_ctc
+        if self.joint_ctc:
             self.fc = Linear(self.encoder_configs.encoder_dim, self.configs.model.num_classes, bias=False)
 
     def count_parameters(self) -> int:
@@ -214,7 +214,7 @@ class ConformerEncoder(nn.Module):
         for layer in self.layers:
             outputs = layer(outputs)
 
-        if self.ctc:
+        if self.joint_ctc:
             logits = self.fc(outputs).log_softmax(dim=-1)
 
         return outputs, output_lengths, logits
