@@ -101,31 +101,66 @@ class Thchs30Preprocess(ManifestPreprocess):
         super().__init__(root_path, output_manifest_path)
 
     def generate_manifest_files(self):
-        paths = list(Path(self.root_path).glob("*/*.wav"))
-        audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in paths]
+        pass
 
-        audio_paths = list()
-        transcripts = list()
+    def generate_character_vocab(self):
+        pass
 
-        for audio_id in audio_ids:
-            with open(audio_id + ".wav.trn", 'r', encoding='utf-8') as transcript_file:
-                text = transcript_file.readline().strip().replace(" ", "")
-                audio_paths.append(audio_id + ".wav")
-                transcripts.append(text)
-        # TODO generate manifests files
+    def generate_word_vocab(self):
+        pass
+
+
+class AishellPreprocess(ManifestPreprocess):
+    def __init__(self, root_path="../aishell/data_aishell/", output_manifest_path="../manifests", ):
+        super().__init__(root_path, output_manifest_path)
+
+    def generate_manifest_files(self):
+        transcripts_dict = {}
+        transcripts = os.path.join(self.root_path, "transcript", "aishell_transcript_v0.8.txt")
+        with open(transcripts, 'r', encoding='utf-8') as f:
+            for line in f.readlines():
+                audio_id, transcript = line.strip().split(" ", 1)
+                transcripts_dict[audio_id] = transcript.replace(" ", "")
+
+        train_paths = list(Path(os.path.join(self.root_path, "wav", "train")).glob("*/*.wav"))
+        dev_paths = list(Path(os.path.join(self.root_path, "wav", "dev")).glob("*/*.wav"))
+        test_paths = list(Path(os.path.join(self.root_path, "wav", "test")).glob("*/*.wav"))
+
+        train_audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in train_paths]
+        dev_audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in dev_paths]
+        test_audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in test_paths]
+
+        with open(os.path.join(self.output_manifest_path, 'train.tsv'), "w", encoding="utf-8") as manifest_file:
+            for audio_id in train_audio_ids:
+                if audio_id not in transcripts_dict:
+                    continue
+                manifest_file.write(os.path.join("wav", "train", audio_id + ".wav") + "\t" + transcripts_dict[
+                    audio_id] + "\n")
+
+        with open(os.path.join(self.output_manifest_path, 'valid.tsv'), "w", encoding="utf-8") as manifest_file:
+            for audio_id in dev_audio_ids:
+                if audio_id not in transcripts_dict:
+                    continue
+                manifest_file.write(os.path.join("wav", "dev", audio_id + ".wav") + "\t" + transcripts_dict[
+                    audio_id] + "\n")
+
+        with open(os.path.join(self.output_manifest_path, 'test.tsv'), "w", encoding="utf-8") as manifest_file:
+            for audio_id in test_audio_ids:
+                if audio_id not in transcripts_dict:
+                    continue
+                manifest_file.write(os.path.join("wav", "test", audio_id + ".wav") + "\t" + transcripts_dict[
+                    audio_id] + "\n")
 
     def generate_character_vocab(self):
         vocab_file_path = os.path.join(self.output_manifest_path, self.vocab_path + ".txt")
         special_tokens = ["<pad>", "<sos>", "<eos>", "<blank>", "<unk>"]
-        manifest_files = list(Path(self.output_manifest_path).glob("*.tsv"))
+        transcripts_path = os.path.join(self.root_path, "transcript", "aishell_transcript_v0.8.txt")
         tokens = []
-
-        for manifest_file in manifest_files:
-            with open(manifest_file, "r", encoding="utf-8") as f:
-                for line in f.readlines():
-                    line = line.strip()
-                    _, transcript = line.split("\t")
-                    tokens.extend(list(transcript))
+        with open(transcripts_path, "r", encoding="utf-8") as f:
+            for line in f.readlines():
+                _, transcript = line.strip().split(" ", 1)
+                transcript = transcript.replace(" ", "")
+                tokens.extend(list(transcript))
 
         tokens = special_tokens + list(set(tokens))
         with open(vocab_file_path, "w", encoding="utf-8") as vocab_file:
@@ -144,10 +179,13 @@ def main(args):
     else:
         raise ValueError("dataset not supported")
     manifest_preprocess.generate_manifest_files()
-    manifest_preprocess.generate_manifest_files()
+    manifest_preprocess.generate_character_vocab()
 
 
 if __name__ == '__main__':
-    parser = get_parser()
-    args = parser.parse_args()
-    main(args)
+    # parser = get_parser()
+    # args = parser.parse_args()
+    # main(args)
+    manifest_preprocess = AishellPreprocess('/data_disk/zlf/datasets/aishell/data_aishell/',
+                                            '/data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars/')
+    manifest_preprocess.generate_character_vocab()
