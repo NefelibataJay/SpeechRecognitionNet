@@ -41,7 +41,7 @@ datamodule:
 
 tokenizer:
   lang: zh
-  word_dict_path: /data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars
+  word_dict_path: /data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars/vocab.txt
 
 logger:
   save_dir: ../tb_logs
