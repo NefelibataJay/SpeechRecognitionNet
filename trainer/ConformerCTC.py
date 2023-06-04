@@ -44,6 +44,7 @@ def main(configs: DictConfig):
     logger = TensorBoardLogger(**configs.logger)
 
     checkpoint_callback = ModelCheckpoint(save_top_k=-1,
+                                          monitor="val_acc",
                                           dirpath=configs.trainer.default_root_dir,
                                           filename='conformer_ctc-{epoch:02d}-{val_loss:.2f}',
                                           )
@@ -52,6 +53,7 @@ def main(configs: DictConfig):
         monitor='val_loss',
         min_delta=0.00,
         patience=3,
+        mode='min',
     )
 
     if configs.training.do_train:
