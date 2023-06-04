@@ -119,7 +119,7 @@ class TransformerDecoder(nn.Module):
             d_ff: int = 512,
             num_layers: int = 6,
             num_heads: int = 8,
-            dropout_p: float = 0.3,
+            dropout_p: float = 0.1,
             pad_id: int = 0,
             sos_id: int = 1,
             eos_id: int = 2,
@@ -188,7 +188,6 @@ class TransformerDecoder(nn.Module):
             targets: Optional[torch.LongTensor] = None,
             encoder_output_lengths: torch.Tensor = None,
             target_lengths: torch.Tensor = None,
-            teacher_forcing_ratio: float = 1.0,
     ) -> torch.Tensor:
         r"""
         Forward propagate a `encoder_outputs` for training.
@@ -207,9 +206,8 @@ class TransformerDecoder(nn.Module):
         """
         logits = list()
         batch_size = encoder_outputs.size(0)
-        use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
-        if targets is not None and use_teacher_forcing:
+        if targets is not None:
             targets = targets[targets != self.eos_id].view(batch_size, -1)  # remove eos
             target_length = targets.size(1)
 

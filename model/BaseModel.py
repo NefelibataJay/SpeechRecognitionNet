@@ -56,8 +56,6 @@ class BaseModel(pl.LightningModule):
         if self.configs.training.lr_scheduler_name is None:
             return {'optimizer': self.optimizer}
 
-
-        # TODO add lr_scheduler
         SCHEDULER_REGISTRY = {
             "lambda_lr": LambdaLR,
             "step_lr": StepLR,
