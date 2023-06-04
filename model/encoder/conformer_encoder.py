@@ -145,6 +145,7 @@ class ConformerEncoder(nn.Module):
 
     def __init__(
             self,
+            num_classes: int,
             input_dim: int = 80,
             encoder_dim: int = 256,
             num_layers: int = 12,
@@ -179,7 +180,7 @@ class ConformerEncoder(nn.Module):
 
         self.joint_ctc = joint_ctc
         if self.joint_ctc:
-            self.fc = Linear(self.encoder_configs.encoder_dim, self.configs.model.num_classes, bias=False)
+            self.fc = Linear(encoder_dim, num_classes, bias=False)
 
     def count_parameters(self) -> int:
         """ Count parameters of encoder """

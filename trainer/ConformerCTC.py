@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import torch
 import pytorch_lightning as pl
@@ -8,6 +9,10 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from omegaconf import DictConfig
 from torch import nn
+
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
 
 from dataloder.datamodule import SpeechToTextDataModule
 from model.conformer_ctc import ConformerCTC
