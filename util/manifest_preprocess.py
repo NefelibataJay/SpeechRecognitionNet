@@ -126,30 +126,19 @@ class AishellPreprocess(ManifestPreprocess):
         dev_paths = list(Path(os.path.join(self.root_path, "wav", "dev")).glob("*/*.wav"))
         test_paths = list(Path(os.path.join(self.root_path, "wav", "test")).glob("*/*.wav"))
 
-        train_audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in train_paths]
-        dev_audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in dev_paths]
-        test_audio_ids = [audio_path.stem.replace(".wav", "") for audio_path in test_paths]
+        self.write_manifest(train_paths, transcripts_dict, "train.tsv")
+        self.write_manifest(dev_paths, transcripts_dict, "valid.tsv")
+        self.write_manifest(test_paths, transcripts_dict, "test.tsv")
 
-        with open(os.path.join(self.output_manifest_path, 'train.tsv'), "w", encoding="utf-8") as manifest_file:
-            for audio_id in train_audio_ids:
-                if audio_id not in transcripts_dict:
+    def write_manifest(self, paths, transcripts_dict, manifest_type):
+        with open(os.path.join(self.output_manifest_path, manifest_type), "w", encoding="utf-8") as manifest_file:
+            for path in paths:
+                if path.stem not in transcripts_dict:
                     continue
-                manifest_file.write(os.path.join("wav", "train", audio_id + ".wav") + "\t" + transcripts_dict[
-                    audio_id] + "\n")
-
-        with open(os.path.join(self.output_manifest_path, 'valid.tsv'), "w", encoding="utf-8") as manifest_file:
-            for audio_id in dev_audio_ids:
-                if audio_id not in transcripts_dict:
-                    continue
-                manifest_file.write(os.path.join("wav", "dev", audio_id + ".wav") + "\t" + transcripts_dict[
-                    audio_id] + "\n")
-
-        with open(os.path.join(self.output_manifest_path, 'test.tsv'), "w", encoding="utf-8") as manifest_file:
-            for audio_id in test_audio_ids:
-                if audio_id not in transcripts_dict:
-                    continue
-                manifest_file.write(os.path.join("wav", "test", audio_id + ".wav") + "\t" + transcripts_dict[
-                    audio_id] + "\n")
+                audio_path = str(path).replace(self.root_path, '')
+                transcript = transcripts_dict[path.stem]
+                speaker_id = path.parent.stem
+                manifest_file.write(f"{audio_path}\t{transcript}\t{speaker_id}\n")
 
     def generate_character_vocab(self):
         vocab_file_path = os.path.join(self.output_manifest_path, self.vocab_path + ".txt")
@@ -188,4 +177,4 @@ if __name__ == '__main__':
     # main(args)
     manifest_preprocess = AishellPreprocess('/data_disk/zlf/datasets/aishell/data_aishell/',
                                             '/data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars/')
-    manifest_preprocess.generate_character_vocab()
+    manifest_preprocess.generate_manifest_files()
