@@ -62,7 +62,11 @@ def main(configs: DictConfig):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
         print(model)
-        trainer = pl.Trainer(logger=logger, callbacks=[checkpoint_callback, early_stop_callback], **configs.trainer)
+        trainer = pl.Trainer(logger=logger,
+                             tqdm_kwargs={"desc": "Training"},
+                             train_loss_key="loss",
+                             callbacks=[checkpoint_callback, early_stop_callback],
+                             **configs.trainer)
         if configs.training.checkpoint_path is not None:
             trainer.fit(model, datamodule=data_module, ckpt_path=configs.training.checkpoint_path, )
         else:
