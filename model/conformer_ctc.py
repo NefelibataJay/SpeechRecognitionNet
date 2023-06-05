@@ -15,9 +15,12 @@ from torchmetrics import CharErrorRate
 class ConformerCTC(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
         super(ConformerCTC, self).__init__(configs=configs, tokenizer=tokenizer)
-
         self.criterion = CTCLoss(blank=configs.model.blank_id, reduction='mean')
         self.val_cer = CharErrorRate(ignore_case=True, reduction='mean')
+        self.blank = self.configs.model.blank_id
+        self.pad = self.configs.model.pad_id
+        self.sos = self.configs.model.sos_id
+        self.eos = self.configs.model.eos_id
         self.encoder_configs = self.configs.model.encoder
         self.encoder = ConformerEncoder(
             num_classes=self.configs.model.num_classes,
@@ -71,7 +74,7 @@ class ConformerCTC(BaseModel):
             target_lengths=target_lengths - 2,  # remove sos, eos
         )
 
-        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.configs.model.eos_id)
+        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
 
         predictions = [self.tokenizer.int2text(sent) for sent in hyps]
 
@@ -101,7 +104,7 @@ class ConformerCTC(BaseModel):
             target_lengths=target_lengths - 2,  # remove sos, eos
         )
 
-        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.configs.model.eos_id)
+        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
 
         predictions = [self.tokenizer.int2text(sent) for sent in hyps]
 

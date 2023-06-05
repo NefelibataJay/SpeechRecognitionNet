@@ -1,0 +1,107 @@
+training:
+  do_train: True
+  checkpoint_path: # ../checkpoints/**.ckpt
+  batch_size: 16
+  max_epoch: 50
+  optimizer_name: adam
+  lr_scheduler_name: exponential_lr
+
+datamodule:
+  dataset:
+    feature_types: fbank
+    num_mel_bins: 80
+    sample_rate: 16000
+    fbank_conf:
+      num_mel_bins: ${datamodule.dataset.num_mel_bins}
+      frame_shift: 10
+      frame_length: 25
+      dither: 0.1
+    speed_perturb: False
+    spec_aug: True
+    spec_aug_conf:
+      max_t_mask: 20
+      max_f_mask: 10
+      num_t_mask: 2
+      num_f_mask: 2
+    spec_sub: False
+    spec_sub_conf:
+      num_t_sub: 3
+      max_t: 30
+    spec_trim: False
+    spec_trim_conf:
+      max_t: 50
+
+  dataset_path: E:/datasets/data_thchs30/
+  batch_size: ${training.batch_size}
+  one_dataset: True
+  val_set_ratio: 0.05
+  test_set_ratio: 0.05
+  num_workers: 0
+  manifest_path:  D:/model/rnn-t/manifests/thchs30_manifest/
+
+tokenizer:
+  lang: zh
+  word_dict_path: D:/model/rnn-t/manifests/thchs30_manifest/vocab.txt
+
+logger:
+  save_dir: ./tb_logs
+  name: conformer_ctc
+
+model:
+  num_classes: ??
+  encoder:
+    input_dim: ${datamodule.dataset.num_mel_bins}
+    encoder_dim: 256
+    num_encoder_layers: 12
+    num_attention_heads: 8
+    feed_forward_expansion_factor: 4
+    conv_expansion_factor: 2
+    input_dropout_p: 0.1
+    feed_forward_dropout_p: 0.1
+    attention_dropout_p: 0.1
+    conv_dropout_p: 0.1
+    conv_kernel_size: 31
+    half_step_residual: True
+    joint_ctc_attention: False
+  decoder:
+    num_classes: ${datamodule.dataset.num_mel_bins}
+    hidden_state_dim: 1024
+    output_dim: 256
+    num_layers: 2
+    rnn_type: lstm
+    dropout_p: 0.2
+    embed_dropout: 0.2
+
+  pad_id: 0
+  sos_id: 1
+  eos_id: 2
+  blank_id: 3
+  unk_id: 4
+  grad_ckpt_batchsize: 4
+
+trainer:
+  accelerator: auto
+  max_epochs: ${training.max_epoch}
+  check_val_every_n_epoch: 5
+  log_every_n_steps: 50
+  accumulate_grad_batches: 8
+  gradient_clip_val: 4.0
+  gradient_clip_algorithm: norm
+  detect_anomaly: True
+  default_root_dir: ./checkpoints
+#  auto_lr_find: True
+#  auto_scale_batch_size: binsearch
+#  precision: 32
+#  sync_batchnorm: True
+
+optimizer:
+  lr: 0.001
+  betas: [ 0.9, 0.98 ]
+  weight_decay: 1e-3
+
+lr_scheduler:
+  gamma: 0.1
+  last_epoch: ${training.max_epoch}
+
+
+

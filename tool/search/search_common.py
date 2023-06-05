@@ -115,6 +115,7 @@ def add_blank(ys_pad: torch.Tensor, blank: int,
     """ Prepad blank for transducer predictor
 
     Args:
+        ignore_id:
         ys_pad (torch.Tensor): batch of padded target sequences (B, Lmax)
         blank (int): index of <blank>
 
@@ -122,14 +123,10 @@ def add_blank(ys_pad: torch.Tensor, blank: int,
         ys_in (torch.Tensor) : (B, Lmax + 1)
 
     Examples:
-        >>> blank = 0
-        >>> ignore_id = -1
-        >>> ys_pad
         tensor([[ 1,  2,  3,   4,   5],
                 [ 4,  5,  6,  -1,  -1],
                 [ 7,  8,  9,  -1,  -1]], dtype=torch.int32)
-        >>> ys_in = add_blank(ys_pad, 0, -1)
-        >>> ys_in
+
         tensor([[0,  1,  2,  3,  4,  5],
                 [0,  4,  5,  6,  0,  0],
                 [0,  7,  8,  9,  0,  0]])

@@ -71,10 +71,13 @@ class LabelSmoothingLoss(nn.Module):
         # since no_grad() can not be exported by JIT
         true_dist = torch.zeros_like(x)
         true_dist.fill_(self.smoothing / (self.size - 1))
+
+        # remove ignore
         ignore = target == self.padding_idx  # (B,)
         total = len(target) - ignore.sum().item()
+
         target = target.masked_fill(ignore, 0)  # avoid -1 index
         true_dist.scatter_(1, target.unsqueeze(1), self.confidence)
-        kl = self.criterion(torch.log_softmax(x, dim=1), true_dist)
+        kl = self.criterion(torch.log_softmax(x.float(), dim=1), true_dist.float())
         denom = total if self.normalize_length else batch_size
         return kl.masked_fill(ignore.unsqueeze(1), 0).sum() / denom
