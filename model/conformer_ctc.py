@@ -22,6 +22,7 @@ class ConformerCTC(BaseModel):
         self.sos = self.configs.model.sos_id
         self.eos = self.configs.model.eos_id
         self.encoder_configs = self.configs.model.encoder
+        self.num_classes = self.configs.model.num_classes
         self.encoder = ConformerEncoder(
             num_classes=self.configs.model.num_classes,
             input_dim=self.encoder_configs.input_dim,
@@ -37,19 +38,20 @@ class ConformerCTC(BaseModel):
             conv_kernel_size=self.encoder_configs.conv_kernel_size,
             half_step_residual=self.encoder_configs.half_step_residual,
         )
+        self.fc = Linear(self.encoder_configs.encoder_dim, self.num_classes, bias=False)
 
         self.decoder = None
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
         return logits
 
     def training_step(self, batch: tuple, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
-
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
+        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
             targets=targets[:, 1:-1],  # remove sos, eos
@@ -65,7 +67,8 @@ class ConformerCTC(BaseModel):
     def validation_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
+        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
 
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
@@ -95,7 +98,8 @@ class ConformerCTC(BaseModel):
     def test_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
+        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
 
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),

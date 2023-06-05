@@ -14,9 +14,9 @@ from torch.nn import CTCLoss
 from torchmetrics import CharErrorRate
 
 
-class ConformerCTC(BaseModel):
+class ConformerCTCAttention(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
-        super(ConformerCTC, self).__init__(configs=configs, tokenizer=tokenizer)
+        super(ConformerCTCAttention, self).__init__(configs=configs, tokenizer=tokenizer)
         self.vocab_size = self.configs.model.num_classes
         self.criterion_ctc = CTCLoss(blank=configs.model.blank_id, reduction='mean')
         self.criterion_att = LabelSmoothingLoss(
@@ -56,14 +56,16 @@ class ConformerCTC(BaseModel):
         )
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
         return logits
 
     def training_step(self, batch: tuple, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
+        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
+
         decoder_logits = self.decoder(encoder_outputs, targets, output_lengths, target_lengths)
 
         loss = self.criterion_ctc(
@@ -81,8 +83,8 @@ class ConformerCTC(BaseModel):
     def validation_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
-
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
+        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
         loss = self.criterion_ctc(
             log_probs=logits.transpose(0, 1),
             targets=targets[:, 1:-1],  # remove sos, eos

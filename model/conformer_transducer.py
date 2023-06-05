@@ -13,19 +13,21 @@ from torchmetrics import CharErrorRate
 from torchaudio.functional import rnnt_loss
 
 
-class ConformerCTC(BaseModel):
+class ConformerTransducer(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
-        super(ConformerCTC, self).__init__(configs=configs, tokenizer=tokenizer)
+        super(ConformerTransducer, self).__init__(configs=configs, tokenizer=tokenizer)
         self.criterion = rnnt_loss
         self.val_cer = CharErrorRate(ignore_case=True, reduction='mean')
         self.encoder_configs = self.configs.model.encoder
+
+        self.num_classes = self.configs.model.num_classes
         self.blank = self.configs.model.blank_id
         self.pad = self.configs.model.pad_id
         self.sos = self.configs.model.sos_id
         self.eos = self.configs.model.eos_id
 
         self.encoder = ConformerEncoder(
-            num_classes=self.configs.model.num_classes,
+            num_classes=self.num_classes,
             input_dim=self.encoder_configs.input_dim,
             encoder_dim=self.encoder_configs.encoder_dim,
             num_layers=self.encoder_configs.num_encoder_layers,
@@ -41,7 +43,7 @@ class ConformerCTC(BaseModel):
         )
         self.decoder_configs = self.configs.model.decoder
         self.decoder = RNNTransducerDecoder(
-            num_classes=self.configs.model.num_classes,
+            num_classes=self.num_classes,
             hidden_state_dim=self.decoder_configs.hidden_state_dim,
             output_dim=self.decoder_configs.output_dim,
             num_layers=self.decoder_configs.num_layers,
@@ -49,17 +51,17 @@ class ConformerCTC(BaseModel):
             dropout_p=self.decoder_configs.dropout_p,
             embed_dropout=self.decoder_configs.embed_dropout,
         )
-        joint_dim = self.encoder_configs.input_dim + self.configs.model.decoder.output_dim
-        self.fc = nn.Sequential(
+        joint_dim = self.encoder_configs.encoder_dim + self.decoder_configs.output_dim
+        self.joint_fc = nn.Sequential(
             Linear(in_features=joint_dim, out_features=joint_dim),
             nn.Tanh(),
             Linear(in_features=joint_dim, out_features=self.num_classes),
         )
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
-        return logits
+        return 0
 
     def joint(self, encoder_outputs: Tensor, decoder_outputs: Tensor) -> Tensor:
         r"""
@@ -81,15 +83,15 @@ class ConformerCTC(BaseModel):
         decoder_outputs = decoder_outputs.repeat([1, input_length, 1, 1])
 
         outputs = torch.cat((encoder_outputs, decoder_outputs), dim=-1)
-        outputs = self.fc(outputs).log_softmax(dim=-1)
+        outputs = self.joint_fc(outputs).log_softmax(dim=-1)
 
         return outputs
 
     def training_step(self, batch: tuple, batch_idx: int):
         # inputs = (batch, padding seq_len, input_dim)
-        # input_lengths = (no padding seq_len)
+        # input_lengths = (batch)  no padding seq_len
         # targets = (batch, padding seq_len)  add sos and eos
-        # target_lengths = (no padding seq_len) add sos and eos
+        # target_lengths = (bath)  no padding seq_len, add sos and eos
         inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
