@@ -94,7 +94,7 @@ class ConformerTransducer(BaseModel):
         # target_lengths = (bath)  no padding seq_len, add sos and eos
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs, _ = self.decoder(targets[:, :-1], target_lengths - 1)
 
         logits = self.joint(encoder_outputs, decoder_outputs)
@@ -114,12 +114,12 @@ class ConformerTransducer(BaseModel):
     def validation_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
 
-        encoder_outputs, output_lengths, logits = self.encoder(inputs, input_lengths)
+        encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs, _ = self.decoder(targets[:, :-1], target_lengths - 1)
 
         logits = self.joint(encoder_outputs, decoder_outputs)
 
-        rnnt_text = targets[:, 1:-1].contiguous().to(torch.int32)
+        rnnt_text = targets[:, 1:].contiguous().to(torch.int32)
 
         loss = self.criterion(logits=logits, targets=rnnt_text,
                               logit_lengths=output_lengths, target_lengths=target_lengths - 2,

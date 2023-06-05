@@ -64,16 +64,9 @@ class ConformerCTCAttention(BaseModel):
         inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
 
         decoder_logits = self.decoder(encoder_outputs, targets, output_lengths, target_lengths)
 
-        loss = self.criterion_ctc(
-            log_probs=logits.transpose(0, 1),
-            targets=targets[:, 1:-1],  # remove sos, eos
-            input_lengths=output_lengths,
-            target_lengths=target_lengths - 2,  # remove sos, eos
-        )
 
         self.log('train_loss', loss)
         self.log('lr', self.get_lr())
@@ -84,13 +77,7 @@ class ConformerCTCAttention(BaseModel):
         inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
-        loss = self.criterion_ctc(
-            log_probs=logits.transpose(0, 1),
-            targets=targets[:, 1:-1],  # remove sos, eos
-            input_lengths=output_lengths,
-            target_lengths=target_lengths - 2,  # remove sos, eos
-        )
+
 
         hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths,
                                      eos=self.configs.model.eos_id)
