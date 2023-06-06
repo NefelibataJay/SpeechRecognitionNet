@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 from model.encoder.conformer_encoder import ConformerEncoder
 from model.modules.modules import Linear
 from model.BaseModel import BaseModel
-from tool.search.greedy_search import greedy_search, ctc_greedy_search
+from tool.search.greedy_search import ctc_greedy_search
 from tool.search.search_common import remove_pad
 from util.tokenizer import Tokenizer
 from torch.nn import CTCLoss
@@ -39,7 +39,6 @@ class ConformerCTC(BaseModel):
             half_step_residual=self.encoder_configs.half_step_residual,
         )
         self.fc = Linear(self.encoder_configs.encoder_dim, self.num_classes, bias=False)
-        self.decoder = None
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
