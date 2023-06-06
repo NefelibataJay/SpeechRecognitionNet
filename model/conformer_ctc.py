@@ -90,6 +90,3 @@ class ConformerCTC(BaseModel):
         char_error_rate = torch.mean(torch.tensor(list_cer)) * 100
         self.log('test_cer', char_error_rate)
         return {'CER': char_error_rate}
-
-    def recognize(self):
-        pass
