@@ -1,47 +1,56 @@
 import torch
+import torch.nn as nn
 import torchaudio
 
 from tool.Loss.label_smoothing_loss import LabelSmoothingLoss
 
+
+def test_ctc():
+    # Target are to be padded
+    T = 50  # Input sequence length
+    C = 20  # Number of classes (including blank)
+    N = 16  # Batch size
+    S = 30  # Target sequence length of longest target in batch (padding length)
+    S_min = 10  # Minimum target length, for demonstration purposes
+
+    # Initialize random batch of input vectors, for *size = (T,N,C)
+    input = torch.randn(T, N, C).log_softmax(dim=-1)
+
+    # Initialize random batch of targets (0 = blank, 1:C = classes)
+    target = torch.randint(low=1, high=C, size=(N, S), dtype=torch.long)
+
+    input_lengths = torch.full(size=(N,), fill_value=T, dtype=torch.long)
+    target_lengths = torch.randint(low=S_min, high=S, size=(N,), dtype=torch.long)
+    ctc_loss = nn.CTCLoss(blank=0, reduction='mean')
+    loss = ctc_loss(input, target, input_lengths, target_lengths)
+
+
+    # Target are to be un-padded
+    T = 50  # Input sequence length
+    C = 20  # Number of classes (including blank)
+    N = 16  # Batch size
+    # Initialize random batch of input vectors, for *size = (T,N,C)
+    input = torch.randn(T, N, C).log_softmax(2)
+    input_lengths = torch.full(size=(N,), fill_value=T, dtype=torch.long)
+    # Initialize random batch of targets (0 = blank, 1:C = classes)
+    target_lengths = torch.randint(low=1, high=T, size=(N,), dtype=torch.long)
+    target = torch.randint(low=1, high=C, size=(sum(target_lengths),), dtype=torch.long)
+    ctc_loss = nn.CTCLoss()
+    loss = ctc_loss(input, target, input_lengths, target_lengths)
+    loss.backward()
+    # Target are to be un-padded and unbatched (effectively N=1)
+    T = 50  # Input sequence length
+    C = 20  # Number of classes (including blank)
+    # Initialize random batch of input vectors, for *size = (T,C)
+    # xdoctest: +SKIP("FIXME: error in doctest")
+    input = torch.randn(T, C).log_softmax(2).detach().requires_grad_()
+    input_lengths = torch.tensor(T, dtype=torch.long)
+    # Initialize random batch of targets (0 = blank, 1:C = classes)
+    target_lengths = torch.randint(low=1, high=T, size=(), dtype=torch.long)
+    target = torch.randint(low=1, high=C, size=(target_lengths,), dtype=torch.long)
+    ctc_loss = nn.CTCLoss()
+    loss = ctc_loss(input, target, input_lengths, target_lengths)
+
+
 if __name__ == "__main__":
-    # x = torch.randn((2, 5, 10))
-    # targets = torch.tensor([[2, 3, 4, 0, 0], [2, 3, 4, 0, 0]])
-    #
-    # loss = LabelSmoothingLoss(10, 0.1)
-    # loss(x, targets)
-    batch_size = 2
-    seq_len = 10
-    n_mels = 80
-    n_frames = 8
-    n_symbols = 4
-    # RNNT loss needs log-mel filterbanks
-    log_mel = torchaudio.transforms.MelSpectrogram(
-        sample_rate=16000,
-        n_fft=512,
-        n_mels=80,
-        hop_length=160,
-        window_fn=torch.hann_window
-    ).to('cpu')
-
-    # Random tensor to act as predicted sequence
-    pred_tensor = torch.rand(batch_size, seq_len,10, n_mels * n_frames)
-
-    # Random tensor to act as ground truth sequence
-    target_tensor = torch.randint(low=0, high=n_symbols, size=(batch_size, seq_len),dtype=torch.int32)
-
-    # Lengths of the sequences
-    input_lengths = torch.full(size=(batch_size,), fill_value=seq_len, dtype=torch.int32)
-    target_lengths = torch.full(size=(batch_size,), fill_value=seq_len, dtype=torch.int32)
-
-    # RNNT Loss
-    loss = torchaudio.functional.rnnt_loss(
-        logits=pred_tensor,
-        targets=target_tensor,
-        logit_lengths=input_lengths,
-        target_lengths=target_lengths,
-        blank=n_symbols - 1,
-        reduction='mean'
-    )
-
-    print(loss)
-
+    test_ctc()

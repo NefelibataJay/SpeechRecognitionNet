@@ -3,7 +3,7 @@ from tool.search.search_common import remove_duplicates_and_blank
 from tool.mask import *
 
 
-def greedy_search(
+def ctc_greedy_search(
         log_probs: torch.Tensor,
         encoder_out_lens: torch.Tensor,
         eos: int = 2,
@@ -29,3 +29,6 @@ def greedy_search(
 
     return hyps, scores
 
+
+def rnnt_greedy_search():
+    pass

@@ -10,6 +10,7 @@ from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from omegaconf import DictConfig
 from torch import nn
 
+from model.conformer_attention import ConformerAttention
 from model.conformer_transducer import ConformerTransducer
 
 curPath = os.path.abspath(os.path.dirname(__file__))
@@ -59,7 +60,7 @@ def main(configs: DictConfig):
     )
 
     if configs.training.do_train:
-        model = ConformerTransducer(configs, tokenizer)
+        model = ConformerCTC(configs, tokenizer)
         for p in model.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
@@ -74,7 +75,7 @@ def main(configs: DictConfig):
     else:
         assert configs.training.checkpoint_path is not None
 
-        model = ConformerTransducer.load_from_checkpoint(configs.training.checkpoint_path)
+        model = ConformerCTC.load_from_checkpoint(configs.training.checkpoint_path)
         model.eval()
 
 

@@ -14,11 +14,11 @@ from torch.nn import CTCLoss
 from torchmetrics import CharErrorRate
 
 
-class ConformerCTCAttention(BaseModel):
+class ConformerAttention(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
-        super(ConformerCTCAttention, self).__init__(configs=configs, tokenizer=tokenizer)
+        super(ConformerAttention, self).__init__(configs=configs, tokenizer=tokenizer)
         self.vocab_size = self.configs.model.num_classes
-        self.criterion_ctc = CTCLoss(blank=configs.model.blank_id, reduction='mean')
+
         self.criterion_att = LabelSmoothingLoss(
             size=self.vocab_size,
             padding_idx=self.configs.model.pad_id,
@@ -27,6 +27,7 @@ class ConformerCTCAttention(BaseModel):
 
         self.val_cer = CharErrorRate(ignore_case=True, reduction='mean')
         self.encoder_configs = self.configs.model.encoder
+
         self.encoder = ConformerEncoder(
             num_classes=self.vocab_size,
             input_dim=self.encoder_configs.input_dim,
@@ -67,6 +68,7 @@ class ConformerCTCAttention(BaseModel):
 
         decoder_logits = self.decoder(encoder_outputs, targets, output_lengths, target_lengths)
 
+        loss = self.criterion_att()
 
         self.log('train_loss', loss)
         self.log('lr', self.get_lr())

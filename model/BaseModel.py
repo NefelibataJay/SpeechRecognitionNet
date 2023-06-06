@@ -76,6 +76,8 @@ class BaseModel(pl.LightningModule):
 
         return {'optimizer': self.optimizer, 'lr_scheduler': self.lr_scheduler}
 
+
+
     def get_lr(self):
         for g in self.optimizer.param_groups:
             return g["lr"]

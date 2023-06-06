@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 from model.encoder.conformer_encoder import ConformerEncoder
 from model.modules.modules import Linear
 from model.BaseModel import BaseModel
-from tool.search.greedy_search import greedy_search
+from tool.search.greedy_search import greedy_search, ctc_greedy_search
 from tool.search.search_common import remove_pad
 from util.tokenizer import Tokenizer
 from torch.nn import CTCLoss
@@ -39,92 +39,57 @@ class ConformerCTC(BaseModel):
             half_step_residual=self.encoder_configs.half_step_residual,
         )
         self.fc = Linear(self.encoder_configs.encoder_dim, self.num_classes, bias=False)
-
         self.decoder = None
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-
-        return logits
+        logits = self.fc(encoder_outputs).log_softmax(dim=-1)
+        hyps, _ = ctc_greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
+        predictions = [self.tokenizer.int2text(sent) for sent in hyps]
+        return predictions
 
     def training_step(self, batch: tuple, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
         logits = self.fc(encoder_outputs).log_softmax(dim=-1)
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
-            targets=targets[:, 1:-1],  # remove sos, eos
+            targets=targets,
             input_lengths=output_lengths,
-            target_lengths=target_lengths - 2,  # remove sos, eos
+            target_lengths=target_lengths,
         )
-
         self.log('train_loss', loss)
         self.log('lr', self.get_lr())
-
         return {'loss': loss, 'learning_rate': self.get_lr()}
 
     def validation_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
-
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
         logits = self.fc(encoder_outputs).log_softmax(dim=-1)
-
         loss = self.criterion(
             log_probs=logits.transpose(0, 1),
-            targets=targets[:, 1:-1],  # remove sos, eos
+            targets=targets,
             input_lengths=output_lengths,
-            target_lengths=target_lengths - 2,  # remove sos, eos
+            target_lengths=target_lengths,
         )
-
-        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
-
-        predictions = [self.tokenizer.int2text(sent) for sent in hyps]
-
-        targets = [self.tokenizer.int2text(remove_pad(sent)) for sent in targets]
-
-        list_cer = []
-        for i, j in zip(predictions, targets):
-            self.val_cer.update(i, j)
-            list_cer.append(self.val_cer.compute())
-
-        char_error_rate = torch.mean(torch.tensor(list_cer)) * 100
-
         self.log('val_loss', loss)
-        self.log('val_cer', char_error_rate)
 
-        return {'val_loss': loss, 'CER': char_error_rate}
+        return {'val_loss': loss}
 
     def test_step(self, batch, batch_idx):
         inputs, input_lengths, targets, target_lengths = batch
-
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
         logits = self.fc(encoder_outputs).log_softmax(dim=-1)
-
-        loss = self.criterion(
-            log_probs=logits.transpose(0, 1),
-            targets=targets[:, 1:-1],  # remove sos, eos
-            input_lengths=output_lengths,
-            target_lengths=target_lengths - 2,  # remove sos, eos
-        )
-
-        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
-
+        hyps, _ = ctc_greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
         predictions = [self.tokenizer.int2text(sent) for sent in hyps]
-
         targets = [self.tokenizer.int2text(remove_pad(sent)) for sent in targets]
-
         list_cer = []
         for i, j in zip(predictions, targets):
             self.val_cer.update(i, j)
             list_cer.append(self.val_cer.compute())
-
         char_error_rate = torch.mean(torch.tensor(list_cer)) * 100
-
-        self.log('val_loss', loss)
-        self.log('val_cer', char_error_rate)
-
-        return {'test_loss': loss, 'CER': char_error_rate}
+        self.log('test_cer', char_error_rate)
+        return {'CER': char_error_rate}
 
     def recognize(self):
         pass

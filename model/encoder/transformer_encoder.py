@@ -111,12 +111,10 @@ class TransformerEncoder(nn.Module):
             num_layers: int = 6,
             num_heads: int = 8,
             dropout_p: float = 0.1,
-            joint_ctc: bool = False,
     ) -> None:
         super(TransformerEncoder, self).__init__()
 
         self.num_classes = num_classes
-        self.joint_ctc = joint_ctc
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -136,15 +134,12 @@ class TransformerEncoder(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        self.joint_ctc = joint_ctc
-        if self.joint_ctc:
-            self.fc = Linear(self.encoder_configs.encoder_dim, self.configs.model.num_classes, bias=False)
 
     def forward(
             self,
             inputs: Tensor,
             input_lengths: Tensor,
-    ) -> Tuple[Tensor, Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor]:
         r"""
         Forward propagate a `inputs` for  encoders training.
 
@@ -161,7 +156,6 @@ class TransformerEncoder(nn.Module):
                 If joint_ctc_attention is False, return None. ``(batch, seq_length, num_classes)``
             * output_lengths: The length of encoders outputs. ``(batch)``
         """
-        logits = 0
         self_attn_mask = get_attn_pad_mask(inputs, input_lengths, inputs.size(1))
 
         outputs = self.input_norm(self.input_proj(inputs))
@@ -171,8 +165,4 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             outputs, attn = layer(outputs, self_attn_mask)
 
-        if self.joint_ctc:
-            outputs = nn.Dropout(outputs)
-            logits = self.fc(outputs).log_softmax(dim=-1)
-
-        return outputs, input_lengths, logits
+        return outputs, input_lengths

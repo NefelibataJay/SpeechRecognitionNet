@@ -95,14 +95,14 @@ class ConformerTransducer(BaseModel):
         inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs, _ = self.decoder(targets[:, :-1], target_lengths - 1)
+        decoder_outputs, _ = self.decoder(targets, target_lengths)
 
         logits = self.joint(encoder_outputs, decoder_outputs)
 
-        rnnt_text = targets[:, 1:-1].contiguous().to(torch.int32)
+        rnnt_text = targets.contiguous().to(torch.int32)
 
         loss = self.criterion(logits=logits, targets=rnnt_text,
-                              logit_lengths=output_lengths, target_lengths=target_lengths - 2,
+                              logit_lengths=output_lengths, target_lengths=target_lengths,
                               blank=self.pad, fused_log_softmax=False,
                               reduction='mean'
                               )

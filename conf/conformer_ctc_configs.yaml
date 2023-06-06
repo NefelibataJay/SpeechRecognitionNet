@@ -15,7 +15,7 @@ datamodule:
       num_mel_bins: ${datamodule.dataset.num_mel_bins}
       frame_shift: 10
       frame_length: 25
-      dither: 0.1
+#      dither: 0.1
     speed_perturb: False
     spec_aug: True
     spec_aug_conf:
@@ -69,7 +69,6 @@ model:
   eos_id: 2
   blank_id: 3
   unk_id: 4
-  grad_ckpt_batchsize: 4
 
 trainer:
   accelerator: auto
