@@ -39,6 +39,7 @@ class DepthwiseConv1d(nn.Module):
     Returns: outputs
         - **outputs** (batch, out_channels, time): Tensor produces by depthwise 1-D convolution.
     """
+
     def __init__(
             self,
             in_channels: int,
@@ -82,6 +83,7 @@ class PointwiseConv1d(nn.Module):
     Returns: outputs
         - **outputs** (batch, out_channels, time): Tensor produces by pointwise 1-D convolution.
     """
+
     def __init__(
             self,
             in_channels: int,
@@ -121,6 +123,7 @@ class ConformerConvModule(nn.Module):
     Outputs: outputs
         outputs (batch, time, dim): Tensor produces by conformer convolution module.
     """
+
     def __init__(
             self,
             in_channels: int,
@@ -133,7 +136,7 @@ class ConformerConvModule(nn.Module):
         assert expansion_factor == 2, "Currently, Only Supports expansion_factor 2"
 
         self.sequential = nn.Sequential(
-            nn.LayerNorm(in_channels),
+            nn.LayerNorm(in_channels, eps=1e-5),
             Transpose(shape=(1, 2)),
             PointwiseConv1d(in_channels, in_channels * expansion_factor, stride=1, padding=0, bias=True),
             GLU(dim=1),
@@ -163,6 +166,7 @@ class Conv2dSubsampling(nn.Module):
         - **outputs** (batch, time, dim): Tensor produced by the convolution
         - **output_lengths** (batch): list of sequence output lengths
     """
+
     def __init__(self, in_channels: int, out_channels: int) -> None:
         super(Conv2dSubsampling, self).__init__()
         self.sequential = nn.Sequential(

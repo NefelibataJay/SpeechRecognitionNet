@@ -7,7 +7,7 @@ from model.encoder.conformer_encoder import ConformerEncoder
 from model.modules.modules import Linear
 from model.BaseModel import BaseModel
 from tool.search.greedy_search import greedy_search
-from tool.search.search_common import remove_pad
+from tool.common import remove_pad
 from util.tokenizer import Tokenizer
 from torchmetrics import CharErrorRate
 from torchaudio.functional import rnnt_loss

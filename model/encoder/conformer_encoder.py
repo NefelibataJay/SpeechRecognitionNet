@@ -56,8 +56,8 @@ class ConformerBlock(nn.Module):
 
     def __init__(
             self,
-            encoder_dim: int = 512,
-            num_attention_heads: int = 8,
+            encoder_dim: int = 256,
+            num_attention_heads: int = 4,
             feed_forward_expansion_factor: int = 4,
             conv_expansion_factor: int = 2,
             feed_forward_dropout_p: float = 0.1,
@@ -65,7 +65,6 @@ class ConformerBlock(nn.Module):
             conv_dropout_p: float = 0.1,
             conv_kernel_size: int = 31,
             half_step_residual: bool = True,
-            normalize_before: bool = False,
     ):
         super(ConformerBlock, self).__init__()
         if half_step_residual:
@@ -105,12 +104,8 @@ class ConformerBlock(nn.Module):
                 ),
                 module_factor=self.feed_forward_residual_factor,
             ),
+            nn.LayerNorm(encoder_dim, eps=1e-5),
         )
-
-        if normalize_before:
-            self.sequential.insert(0, nn.LayerNorm(encoder_dim))
-        else:
-            self.sequential.append(nn.LayerNorm(encoder_dim))
 
     def forward(self, inputs: Tensor) -> Tensor:
         return self.sequential(inputs)
@@ -149,7 +144,7 @@ class ConformerEncoder(nn.Module):
             input_dim: int = 80,
             encoder_dim: int = 256,
             num_layers: int = 12,
-            num_attention_heads: int = 8,
+            num_attention_heads: int = 4,
             feed_forward_expansion_factor: int = 4,
             conv_expansion_factor: int = 2,
             input_dropout_p: float = 0.1,

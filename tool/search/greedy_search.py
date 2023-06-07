@@ -1,5 +1,4 @@
-import torch
-from tool.search.search_common import remove_duplicates_and_blank
+from tool.common import remove_duplicates_and_blank
 from tool.mask import *
 
 

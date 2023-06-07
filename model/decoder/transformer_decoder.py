@@ -44,14 +44,16 @@ class TransformerDecoderLayer(nn.Module):
             d_model: int = 512,
             num_heads: int = 8,
             d_ff: int = 2048,
-            dropout_p: float = 0.3,
+            dropout_p: float = 0.1,
     ) -> None:
         super(TransformerDecoderLayer, self).__init__()
-        self.self_attention_norm = nn.LayerNorm(d_model)
-        self.decoder_attention_norm = nn.LayerNorm(d_model)
-        self.feed_forward_norm = nn.LayerNorm(d_model)
+        self.self_attention_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.self_attention = MultiHeadAttention(d_model, num_heads)
+        self.attention_dropout = nn.Dropout(dropout_p)
+        self.decoder_attention_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.decoder_attention = MultiHeadAttention(d_model, num_heads)
+        self.decoder_attention_dropout = nn.Dropout(dropout_p)
+        self.feed_forward_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout_p)
 
     def forward(
@@ -136,6 +138,7 @@ class TransformerDecoder(nn.Module):
 
         self.embedding = TransformerEmbedding(num_classes, pad_id, d_model)
         self.positional_encoding = PositionalEncoding(d_model)
+
         self.input_dropout = nn.Dropout(p=dropout_p)
         self.layers = nn.ModuleList(
             [
@@ -149,7 +152,7 @@ class TransformerDecoder(nn.Module):
             ]
         )
         self.fc = nn.Sequential(
-            nn.LayerNorm(d_model),
+            nn.LayerNorm(d_model, eps=1e-5),
             nn.Linear(d_model, d_model, bias=False),
             nn.Tanh(),
             nn.Linear(d_model, num_classes, bias=False),
@@ -199,7 +202,6 @@ class TransformerDecoder(nn.Module):
             encoder_outputs (torch.FloatTensor): A output sequence of encoders. `FloatTensor` of size
                 ``(batch, seq_length, dimension)``
             encoder_output_lengths (torch.LongTensor): The length of encoders outputs. ``(batch)``
-            teacher_forcing_ratio (float): ratio of teacher forcing
 
         Returns:
             * logits (torch.FloatTensor): Log probability of model predictions.

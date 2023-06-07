@@ -1,24 +1,26 @@
-import torch
 from torch import Tensor
 from omegaconf import DictConfig
 
 from model.decoder.transformer_decoder import TransformerDecoder
 from model.encoder.conformer_encoder import ConformerEncoder
-from model.modules.modules import Linear
 from model.BaseModel import BaseModel
 from tool.Loss.label_smoothing_loss import LabelSmoothingLoss
-from tool.search.greedy_search import greedy_search
-from tool.search.search_common import remove_pad
+from tool.common import add_sos_eos
 from util.tokenizer import Tokenizer
-from torch.nn import CTCLoss
 from torchmetrics import CharErrorRate
 
 
 class ConformerAttention(BaseModel):
     def __init__(self, configs: DictConfig, tokenizer: Tokenizer) -> None:
         super(ConformerAttention, self).__init__(configs=configs, tokenizer=tokenizer)
-        self.vocab_size = self.configs.model.num_classes
+        self.num_classes = self.configs.model.num_classes
+        self.blank = self.configs.model.blank_id
+        self.pad = self.configs.model.pad_id
+        self.sos = self.configs.model.sos_id
+        self.eos = self.configs.model.eos_id
 
+
+        self.criterion =
         self.criterion_att = LabelSmoothingLoss(
             size=self.vocab_size,
             padding_idx=self.configs.model.pad_id,
@@ -29,7 +31,7 @@ class ConformerAttention(BaseModel):
         self.encoder_configs = self.configs.model.encoder
 
         self.encoder = ConformerEncoder(
-            num_classes=self.vocab_size,
+            num_classes=self.num_classes,
             input_dim=self.encoder_configs.input_dim,
             encoder_dim=self.encoder_configs.encoder_dim,
             num_layers=self.encoder_configs.num_encoder_layers,
@@ -45,26 +47,30 @@ class ConformerAttention(BaseModel):
         )
         self.decoder_configs = self.configs.model.decoder
         self.decoder = TransformerDecoder(
-            num_classes=self.vocab_size,
+            num_classes=self.num_classes,
             d_model=self.decoder_configs.d_model,
             d_ff=self.decoder_configs.d_ff,
             num_layers=self.decoder_configs.num_layers,
             num_heads=self.decoder_configs.num_heads,
             dropout_p=self.decoder_configs.dropout_p,
-            pad_id=self.configs.model.pad_id,
-            sos_id=self.configs.model.sos_id,
-            eos_id=self.configs.model.eos_id,
+            pad_id=self.pad,
+            sos_id=self.sos,
+            eos_id=self.eos,
         )
 
     def forward(self, inputs: Tensor, input_lengths: Tensor):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
-        return logits
+        decoder_logits = self.decoder(encoder_outputs, output_lengths)
+
+        return decoder_logits
 
     def training_step(self, batch: tuple, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
+
+        decoder_targets = add_sos_eos(targets, self.sos, self.eos,ignore_id=self.pad)
 
         decoder_logits = self.decoder(encoder_outputs, targets, output_lengths, target_lengths)
 
@@ -81,24 +87,11 @@ class ConformerAttention(BaseModel):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
 
-        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths,
-                                     eos=self.configs.model.eos_id)
-
-        predictions = [self.tokenizer.int2text(sent) for sent in hyps]
-
-        targets = [self.tokenizer.int2text(remove_pad(sent)) for sent in targets]
-
-        list_cer = []
-        for i, j in zip(predictions, targets):
-            self.val_cer.update(i, j)
-            list_cer.append(self.val_cer.compute())
-
-        char_error_rate = torch.mean(torch.tensor(list_cer)) * 100
+        loss = self.criterion()
 
         self.log('val_loss', loss)
-        self.log('val_cer', char_error_rate)
 
-        return {'val_loss': loss, 'CER': char_error_rate}
+        return {'val_loss': loss}
 
     def test_step(self, batch, batch_idx):
         pass

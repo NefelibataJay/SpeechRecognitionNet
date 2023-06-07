@@ -67,7 +67,7 @@ class FeedForwardModule(nn.Module):
     ) -> None:
         super(FeedForwardModule, self).__init__()
         self.sequential = nn.Sequential(
-            nn.LayerNorm(encoder_dim),
+            nn.LayerNorm(encoder_dim, eps=1e-5),
             Linear(encoder_dim, encoder_dim * expansion_factor, bias=True),
             Swish(),
             nn.Dropout(p=dropout_p),
