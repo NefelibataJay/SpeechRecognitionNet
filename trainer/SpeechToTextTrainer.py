@@ -23,7 +23,7 @@ from util.tokenizer import EnglishCharTokenizer, ChineseCharTokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="../conf", help="config path")  # config path
-parser.add_argument("-cn", default="conformer_transducer_configs", help="config name")  # config name
+parser.add_argument("-cn", default="conformer_attention_configs", help="config name")  # config name
 args = parser.parse_args()
 
 
@@ -60,7 +60,7 @@ def main(configs: DictConfig):
     )
 
     if configs.training.do_train:
-        model = ConformerCTC(configs, tokenizer)
+        model = ConformerAttention(configs, tokenizer)
         for p in model.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
@@ -75,7 +75,7 @@ def main(configs: DictConfig):
     else:
         assert configs.training.checkpoint_path is not None
 
-        model = ConformerCTC.load_from_checkpoint(configs.training.checkpoint_path)
+        model = ConformerAttention.load_from_checkpoint(configs.training.checkpoint_path)
         model.eval()
 
 

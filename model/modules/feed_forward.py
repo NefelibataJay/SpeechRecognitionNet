@@ -15,7 +15,6 @@
 import torch.nn as nn
 from torch import Tensor
 
-from model.modules.activation import Swish
 from model.modules.modules import Linear
 
 
@@ -69,7 +68,7 @@ class FeedForwardModule(nn.Module):
         self.sequential = nn.Sequential(
             nn.LayerNorm(encoder_dim, eps=1e-5),
             Linear(encoder_dim, encoder_dim * expansion_factor, bias=True),
-            Swish(),
+            nn.SiLU(),
             nn.Dropout(p=dropout_p),
             Linear(encoder_dim * expansion_factor, encoder_dim, bias=True),
             nn.Dropout(p=dropout_p),

@@ -5,7 +5,7 @@ from model.decoder.transformer_decoder import TransformerDecoder
 from model.encoder.conformer_encoder import ConformerEncoder
 from model.BaseModel import BaseModel
 from tool.Loss.label_smoothing_loss import LabelSmoothingLoss
-from tool.common import add_sos_eos
+from tool.common import add_sos_eos, add_sos, add_eos
 from util.tokenizer import Tokenizer
 from torchmetrics import CharErrorRate
 
@@ -19,7 +19,7 @@ class ConformerAttention(BaseModel):
         self.sos = self.configs.model.sos_id
         self.eos = self.configs.model.eos_id
 
-        self.criterion_att = LabelSmoothingLoss(
+        self.criterion = LabelSmoothingLoss(
             size=self.num_classes,
             padding_idx=self.pad,
             smoothing=0.1,
@@ -68,11 +68,13 @@ class ConformerAttention(BaseModel):
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
-        decoder_targets = add_sos_eos(targets, self.sos, self.eos,ignore_id=self.pad)
+        decoder_input = add_sos(targets, self.sos)  # add sos
+        target_lengths = target_lengths + 1
+        decoder_outputs = self.decoder(encoder_outputs=encoder_outputs, targets=decoder_input,
+                                       encoder_output_lengths=output_lengths, target_lengths=target_lengths)
 
-        decoder_logits = self.decoder(encoder_outputs, targets, output_lengths, target_lengths)
-
-        loss = self.criterion_att()
+        targets = add_eos(targets, self.eos)  # add eos
+        loss = self.criterion_att(decoder_outputs, targets)
 
         self.log('train_loss', loss)
         self.log('lr', self.get_lr())
@@ -84,8 +86,11 @@ class ConformerAttention(BaseModel):
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
+        decoder_input = add_sos(targets, self.sos)  # add sos
+        decoder_outputs = self.decoder(encoder_outputs, decoder_input, output_lengths, target_lengths + 1)
 
-        loss = self.criterion()
+        targets = add_eos(targets, self.eos)  # add eos
+        loss = self.criterion(decoder_outputs, targets)
 
         self.log('val_loss', loss)
 

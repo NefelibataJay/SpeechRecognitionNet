@@ -31,17 +31,17 @@ datamodule:
     spec_trim_conf:
       max_t: 50
 
-  dataset_path: /data_disk/zlf/datasets/aishell/data_aishell/
+  dataset_path: E:/datasets/data_thchs30/
   batch_size: ${training.batch_size}
   one_dataset: True
   val_set_ratio: 0.05
   test_set_ratio: 0.05
   num_workers: 0
-  manifest_path: /data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars
+  manifest_path: D:/model/rnn-t/manifests/thchs30_manifest/
 
 tokenizer:
   lang: zh
-  word_dict_path: /data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars/vocab.txt
+  word_dict_path: D:/model/rnn-t/manifests/thchs30_manifest/vocab.txt
 
 logger:
   save_dir: ./tb_logs

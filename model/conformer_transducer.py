@@ -6,8 +6,8 @@ from model.decoder.transducer_decoder import RNNTransducerDecoder
 from model.encoder.conformer_encoder import ConformerEncoder
 from model.modules.modules import Linear
 from model.BaseModel import BaseModel
-from tool.search.greedy_search import greedy_search
 from tool.common import remove_pad
+from tool.search.greedy_search import ctc_greedy_search
 from util.tokenizer import Tokenizer
 from torchmetrics import CharErrorRate
 from torchaudio.functional import rnnt_loss
@@ -127,7 +127,7 @@ class ConformerTransducer(BaseModel):
                               reduction='mean'
                               )
 
-        hyps, scores = greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
+        hyps, scores = ctc_greedy_search(log_probs=logits, encoder_out_lens=output_lengths, eos=self.eos)
 
         predictions = [self.tokenizer.int2text(sent) for sent in hyps]
 

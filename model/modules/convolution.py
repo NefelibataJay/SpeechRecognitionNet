@@ -16,7 +16,6 @@ import torch.nn as nn
 from torch import Tensor
 from typing import Tuple
 
-from model.modules.activation import Swish, GLU
 from model.modules.modules import Transpose
 
 
@@ -139,10 +138,10 @@ class ConformerConvModule(nn.Module):
             nn.LayerNorm(in_channels, eps=1e-5),
             Transpose(shape=(1, 2)),
             PointwiseConv1d(in_channels, in_channels * expansion_factor, stride=1, padding=0, bias=True),
-            GLU(dim=1),
+            nn.GLU(dim=1),
             DepthwiseConv1d(in_channels, in_channels, kernel_size, stride=1, padding=(kernel_size - 1) // 2),
             nn.BatchNorm1d(in_channels),
-            Swish(),
+            nn.SiLU(),
             PointwiseConv1d(in_channels, in_channels, stride=1, padding=0, bias=True),
             nn.Dropout(p=dropout_p),
         )
