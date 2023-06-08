@@ -1,4 +1,3 @@
-import random
 from typing import Tuple, Optional
 
 import torch
@@ -7,7 +6,7 @@ from torch import nn, Tensor
 from model.modules.attention import MultiHeadAttention
 from model.modules.embedding import PositionalEncoding, TransformerEmbedding
 from model.modules.feed_forward import PositionwiseFeedForward
-from model.modules.mask import get_attn_pad_mask, get_attn_subsequent_mask
+from tool.mask import get_attn_pad_mask, get_attn_subsequent_mask
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -50,9 +49,11 @@ class TransformerDecoderLayer(nn.Module):
         self.self_attention_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.self_attention = MultiHeadAttention(d_model, num_heads)
         self.attention_dropout = nn.Dropout(dropout_p)
+
         self.decoder_attention_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.decoder_attention = MultiHeadAttention(d_model, num_heads)
         self.decoder_attention_dropout = nn.Dropout(dropout_p)
+
         self.feed_forward_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.feed_forward = PositionwiseFeedForward(d_model, d_ff, dropout_p)
 

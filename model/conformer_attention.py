@@ -19,12 +19,10 @@ class ConformerAttention(BaseModel):
         self.sos = self.configs.model.sos_id
         self.eos = self.configs.model.eos_id
 
-
-        self.criterion =
         self.criterion_att = LabelSmoothingLoss(
-            size=self.vocab_size,
-            padding_idx=self.configs.model.pad_id,
-            smoothing=self.model.lsm_weight,
+            size=self.num_classes,
+            padding_idx=self.pad,
+            smoothing=0.1,
         )
 
         self.val_cer = CharErrorRate(ignore_case=True, reduction='mean')

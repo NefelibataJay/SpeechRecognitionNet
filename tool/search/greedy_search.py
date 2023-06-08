@@ -1,3 +1,5 @@
+import torch
+
 from tool.common import remove_duplicates_and_blank
 from tool.mask import *
 

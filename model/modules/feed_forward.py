@@ -27,7 +27,7 @@ class PositionwiseFeedForward(nn.Module):
     Another way of describing this is as two convolutions with kernel size 1.
     """
 
-    def __init__(self, d_model: int = 512, d_ff: int = 2048, dropout_p: float = 0.3) -> None:
+    def __init__(self, d_model: int = 256, d_ff: int = 2048, dropout_p: float = 0.1) -> None:
         super(PositionwiseFeedForward, self).__init__()
         self.feed_forward = nn.Sequential(
             nn.Linear(d_model, d_ff),
@@ -61,7 +61,7 @@ class FeedForwardModule(nn.Module):
 
     def __init__(
             self,
-            encoder_dim: int = 512,
+            encoder_dim: int = 256,
             expansion_factor: int = 4,
             dropout_p: float = 0.1,
     ) -> None:

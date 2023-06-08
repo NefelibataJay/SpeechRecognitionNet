@@ -158,6 +158,7 @@ class ConformerEncoder(nn.Module):
         self.conv_subsample = Conv2dSubsampling(in_channels=1, out_channels=encoder_dim)
         self.input_projection = nn.Sequential(
             Linear(encoder_dim * (((input_dim - 1) // 2 - 1) // 2), encoder_dim),
+            ## TODO add RelPositionalEncoding
             nn.Dropout(p=input_dropout_p),
         )
         self.layers = nn.ModuleList([ConformerBlock(

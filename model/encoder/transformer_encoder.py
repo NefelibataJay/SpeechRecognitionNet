@@ -6,8 +6,7 @@ from torch import nn, Tensor
 from model.modules.attention import MultiHeadAttention
 from model.modules.embedding import PositionalEncoding
 from model.modules.feed_forward import PositionwiseFeedForward
-from model.modules.mask import get_attn_pad_mask
-from model.modules.modules import Linear
+from tool.mask import get_attn_pad_mask
 
 
 class TransformerEncoderLayer(nn.Module):
