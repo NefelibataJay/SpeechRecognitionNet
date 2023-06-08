@@ -69,12 +69,10 @@ class ConformerAttention(BaseModel):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
         decoder_input = add_sos(targets, self.sos)  # add sos
-        target_lengths = target_lengths + 1
-        decoder_outputs = self.decoder(encoder_outputs=encoder_outputs, targets=decoder_input,
-                                       encoder_output_lengths=output_lengths, target_lengths=target_lengths)
+        decoder_outputs = self.decoder(encoder_outputs, decoder_input, output_lengths, target_lengths + 1)
 
         targets = add_eos(targets, self.eos)  # add eos
-        loss = self.criterion_att(decoder_outputs, targets)
+        loss = self.criterion(decoder_outputs, targets)
 
         self.log('train_loss', loss)
         self.log('lr', self.get_lr())

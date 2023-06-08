@@ -154,8 +154,6 @@ class TransformerDecoder(nn.Module):
         )
         self.fc = nn.Sequential(
             nn.LayerNorm(d_model, eps=1e-5),
-            nn.Linear(d_model, d_model, bias=False),
-            nn.Tanh(),
             nn.Linear(d_model, num_classes, bias=False),
         )
 
@@ -207,31 +205,26 @@ class TransformerDecoder(nn.Module):
         Returns:
             * logits (torch.FloatTensor): Log probability of model predictions.
         """
-        logits = list()
+        # logits = list()
+        outputs = None
         batch_size = encoder_outputs.size(0)
 
         if targets is not None:
-            targets = targets[targets != self.eos_id].view(batch_size, -1)  # remove eos
-            target_length = targets.size(1)
-
-            step_outputs = self.forward_step(
+            max_length = targets.size(1)
+            outputs = self.forward_step(
                 decoder_inputs=targets,
                 decoder_input_lengths=target_lengths,
                 encoder_outputs=encoder_outputs,
                 encoder_output_lengths=encoder_output_lengths,
-                positional_encoding_length=target_length,
+                positional_encoding_length=max_length,
             )
-            step_outputs = self.fc(step_outputs).log_softmax(dim=-1)
-
-            for di in range(step_outputs.size(1)):
-                step_output = step_outputs[:, di, :]
-                logits.append(step_output)
+            outputs = self.fc(outputs)
 
         # Inference
         else:
             input_var = encoder_outputs.new_zeros(batch_size, self.max_length).long()
             input_var = input_var.fill_(self.pad_id)
-            input_var[:, 0] = self.sos_id
+            input_var[:, 0] = self.sos_id  # add sos
 
             for di in range(1, self.max_length):
                 input_lengths = torch.IntTensor(batch_size).fill_(di)
@@ -243,9 +236,5 @@ class TransformerDecoder(nn.Module):
                     encoder_output_lengths=encoder_output_lengths,
                     positional_encoding_length=di,
                 )
-                step_output = self.fc(outputs).log_softmax(dim=-1)
-
-                logits.append(step_output[:, -1, :])
-                input_var[:, di] = logits[-1].topk(1)[1].squeeze()
-
-        return torch.stack(logits, dim=1)
+                outputs = self.fc(outputs)
+        return outputs
