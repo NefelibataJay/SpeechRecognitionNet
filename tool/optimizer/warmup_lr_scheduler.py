@@ -30,8 +30,6 @@ class WarmupLR(LRScheduler):
         self.last_epoch = last_epoch
         self.warmup_steps = warmup_steps
 
-        # __init__() must be invoked before setting field
-        # because step() is also invoked in __init__()
         super().__init__(optimizer, last_epoch)
 
     def __repr__(self):
@@ -51,6 +49,3 @@ class WarmupLR(LRScheduler):
                 * min(step_num ** -0.5, step_num * self.warmup_steps ** -1.5)
                 for lr in self.base_lrs
             ]
-
-    def set_step(self, step: int):
-        self.last_epoch = step

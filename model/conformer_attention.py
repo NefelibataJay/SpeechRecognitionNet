@@ -1,3 +1,4 @@
+import torch
 from torch import Tensor
 from omegaconf import DictConfig
 
@@ -6,6 +7,8 @@ from model.encoder.conformer_encoder import ConformerEncoder
 from model.BaseModel import BaseModel
 from tool.Loss.label_smoothing_loss import LabelSmoothingLoss
 from tool.common import add_sos_eos, add_sos, add_eos
+from tool.search.beam_search import BeamSearch
+from tool.search.greedy_search import transformer_greedy_search
 from util.tokenizer import Tokenizer
 from torchmetrics import CharErrorRate
 
@@ -84,15 +87,9 @@ class ConformerAttention(BaseModel):
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
-        decoder_input = add_sos(targets, self.sos)  # add sos
-        decoder_outputs = self.decoder(encoder_outputs, decoder_input, output_lengths, target_lengths + 1)
+        prediction = transformer_greedy_search(self.decoder, encoder_outputs, output_lengths)
 
-        targets = add_eos(targets, self.eos)  # add eos
-        loss = self.criterion(decoder_outputs, targets)
-
-        self.log('val_loss', loss)
-
-        return {'val_loss': loss}
+        return None
 
     def test_step(self, batch, batch_idx):
         pass

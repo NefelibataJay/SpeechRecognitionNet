@@ -136,9 +136,10 @@ class TransformerDecoder(nn.Module):
         self.pad_id = pad_id
         self.sos_id = sos_id
         self.eos_id = eos_id
+        self.num_classes = num_classes
 
-        self.embedding = TransformerEmbedding(num_classes, pad_id, d_model)
-        self.positional_encoding = PositionalEncoding(d_model)
+        self.embedding = TransformerEmbedding(self.num_classes, pad_id, d_model)
+        self.positional_encoding = PositionalEncoding(d_model, max_len=200)
 
         self.input_dropout = nn.Dropout(p=dropout_p)
         self.layers = nn.ModuleList(
@@ -164,7 +165,7 @@ class TransformerDecoder(nn.Module):
             encoder_outputs: torch.Tensor,
             encoder_output_lengths: torch.Tensor,
             positional_encoding_length: int,
-    ) -> torch.Tensor:
+    ):
         dec_self_attn_pad_mask = get_attn_pad_mask(decoder_inputs, decoder_input_lengths, decoder_inputs.size(1))
         dec_self_attn_subsequent_mask = get_attn_subsequent_mask(decoder_inputs)
         self_attn_mask = torch.gt((dec_self_attn_pad_mask + dec_self_attn_subsequent_mask), 0)
@@ -174,15 +175,18 @@ class TransformerDecoder(nn.Module):
         outputs = self.embedding(decoder_inputs) + self.positional_encoding(positional_encoding_length)
         outputs = self.input_dropout(outputs)
 
+        dec_self_attns, dec_enc_attns = [], []
         for layer in self.layers:
-            outputs, self_attn, memory_attn = layer(
+            outputs, self_attn, encoder_attn = layer(
                 inputs=outputs,
                 encoder_outputs=encoder_outputs,
                 self_attn_mask=self_attn_mask,
                 encoder_attn_mask=encoder_attn_mask,
             )
+            dec_self_attns.append(self_attn)
+            dec_enc_attns.append(encoder_attn)
 
-        return outputs
+        return outputs, dec_self_attns, dec_enc_attns
 
     def forward(
             self,
@@ -205,21 +209,18 @@ class TransformerDecoder(nn.Module):
         Returns:
             * logits (torch.FloatTensor): Log probability of model predictions.
         """
-        # logits = list()
         outputs = None
         batch_size = encoder_outputs.size(0)
 
         if targets is not None:
             max_length = targets.size(1)
-            outputs = self.forward_step(
+            outputs, self_attn, memory_attn = self.forward_step(
                 decoder_inputs=targets,
                 decoder_input_lengths=target_lengths,
                 encoder_outputs=encoder_outputs,
                 encoder_output_lengths=encoder_output_lengths,
                 positional_encoding_length=max_length,
             )
-            outputs = self.fc(outputs)
-
         # Inference
         else:
             input_var = encoder_outputs.new_zeros(batch_size, self.max_length).long()
@@ -229,12 +230,12 @@ class TransformerDecoder(nn.Module):
             for di in range(1, self.max_length):
                 input_lengths = torch.IntTensor(batch_size).fill_(di)
 
-                outputs = self.forward_step(
+                outputs, dec_self_attns, dec_enc_attns = self.forward_step(
                     decoder_inputs=input_var[:, :di],
                     decoder_input_lengths=input_lengths,
                     encoder_outputs=encoder_outputs,
                     encoder_output_lengths=encoder_output_lengths,
                     positional_encoding_length=di,
                 )
-                outputs = self.fc(outputs)
+        outputs = self.fc(outputs)
         return outputs

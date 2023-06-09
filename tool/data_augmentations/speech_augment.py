@@ -5,6 +5,7 @@ import random
 
 class SpecAugment:
     def __init__(self, max_t_mask=10, max_f_mask=10, num_t_mask=1, num_f_mask=1):
+        # TODO add time warp
         self.timeMasking = torchaudio.transforms.TimeMasking(time_mask_param=max_t_mask)
         self.frequencyMasking = torchaudio.transforms.FrequencyMasking(freq_mask_param=max_f_mask)
         self.max_t_mask = max_t_mask
