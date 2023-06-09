@@ -43,9 +43,8 @@ def transformer_greedy_search(decoder, encoder_outputs, encoder_output_lengths):
     vocab_size = decoder.num_classes
     max_length = 128
 
-    input_var = encoder_outputs.new_zeros(batch_size, max_length).long()
-    input_var = input_var.fill_(pad)
-    input_var[:, 0] = sos  # add sos
+    input_var = encoder_outputs.new_zeros(batch_size, 1).long()
+    input_var = input_var.fill_(sos)  # add sos
 
     for di in range(1, max_length):
         input_lengths = torch.IntTensor(batch_size).fill_(di)
