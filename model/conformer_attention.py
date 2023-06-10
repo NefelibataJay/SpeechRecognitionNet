@@ -87,7 +87,8 @@ class ConformerAttention(BaseModel):
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
 
-        prediction = transformer_greedy_search(self.decoder, encoder_outputs, output_lengths)
+        hyps = transformer_greedy_search(self.decoder, encoder_outputs, output_lengths)
+        predictions = [self.tokenizer.int2text(sent) for sent in hyps]
 
         return None
 

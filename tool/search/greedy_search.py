@@ -48,17 +48,22 @@ def transformer_greedy_search(decoder, encoder_outputs, encoder_output_lengths):
 
     for di in range(1, max_length):
         input_lengths = torch.IntTensor(batch_size).fill_(di)
-        dec_outputs,_,_ = decoder.forward_step(
-            decoder_inputs=input_var[:, :di],
+        dec_outputs, _, _ = decoder.forward_step(
+            decoder_inputs=input_var,
             decoder_input_lengths=input_lengths,
             encoder_outputs=encoder_outputs,
             encoder_output_lengths=encoder_output_lengths,
             positional_encoding_length=di, )
         # dec_outputs (batch_size, max_length, vocab_size)
-        topk_prob, topk_index = decoder.fc(dec_outputs).log_softmax(dim=-1).topk(beam_size, dim=-1)  # [1].squeeze(dim=-1)
+        topk_prob, topk_index = decoder.fc(dec_outputs).log_softmax(dim=-1).topk(beam_size,
+                                                                                 dim=-1)  # [1].squeeze(dim=-1)
         # topk_index = decoder.fc(dec_outputs).log_softmax(dim=-1).argmax(dim=-1)
         # topk_index is token_id
-        input_var = torch.cat([input_var[:, :di], topk_index.squeeze(1)], dim=1)
+        new_token_id = topk_index[:,-1, :]
+        input_var = torch.cat([input_var, new_token_id], dim=1)
+
+        if torch.all(new_token_id < 3):
+            break
 
     return input_var
 
