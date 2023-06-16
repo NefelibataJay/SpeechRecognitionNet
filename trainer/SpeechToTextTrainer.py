@@ -24,6 +24,7 @@ from util.tokenizer import EnglishCharTokenizer, ChineseCharTokenizer
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="../conf", help="config path")  # config path
 parser.add_argument("-cn", default="conformer_attention_configs", help="config name")  # config name
+parser.add_argument("--model ", default="ConformerCTC", help="model name")  # model name
 args = parser.parse_args()
 
 

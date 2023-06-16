@@ -37,7 +37,6 @@ def transformer_greedy_search(decoder, encoder_outputs, encoder_output_lengths):
     sos = 1
     eos = 2
     pad = 0
-    k = 1  # beam_size
     batch_size = encoder_outputs.size(0)
     hidden_size = encoder_outputs.size(2)
     vocab_size = decoder.num_classes
@@ -55,14 +54,13 @@ def transformer_greedy_search(decoder, encoder_outputs, encoder_output_lengths):
             encoder_output_lengths=encoder_output_lengths,
             positional_encoding_length=di, )
         # dec_outputs (batch_size, max_length, vocab_size)
-        topk_prob, topk_index = decoder.fc(dec_outputs).log_softmax(dim=-1).topk(beam_size,
-                                                                                 dim=-1)  # [1].squeeze(dim=-1)
+        topk_prob, topk_index = decoder.fc(dec_outputs).log_softmax(dim=-1).topk(beam_size, dim=-1)
         # topk_index = decoder.fc(dec_outputs).log_softmax(dim=-1).argmax(dim=-1)
         # topk_index is token_id
-        new_token_id = topk_index[:,-1, :]
+        new_token_id = topk_index[:, -1, :]
         input_var = torch.cat([input_var, new_token_id], dim=1)
 
-        if torch.all(new_token_id < 3):
+        if torch.all(new_token_id < eos + 1):
             break
 
     return input_var
