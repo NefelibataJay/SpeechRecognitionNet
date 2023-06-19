@@ -23,7 +23,7 @@ from util.tokenizer import EnglishCharTokenizer, ChineseCharTokenizer
 
 parser = argparse.ArgumentParser(description="Config path")
 parser.add_argument("-cp", default="../conf", help="config path")  # config path
-parser.add_argument("-cn", default="conformer_attention_configs", help="config name")  # config name
+parser.add_argument("-cn", default="conformer_ctc_configs", help="config name")  # config name
 parser.add_argument("--model ", default="ConformerCTC", help="model name")  # model name
 args = parser.parse_args()
 
@@ -60,8 +60,12 @@ def main(configs: DictConfig):
         mode='min',
     )
 
-    if configs.training.do_train:
+    if args.model == "ConformerCTC":
+        model = ConformerCTC(configs, tokenizer)
+    else:
         model = ConformerAttention(configs, tokenizer)
+
+    if configs.training.do_train:
         for p in model.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
