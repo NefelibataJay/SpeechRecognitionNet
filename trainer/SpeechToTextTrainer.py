@@ -65,6 +65,7 @@ def main(configs: DictConfig):
     else:
         model = ConformerAttention(configs, tokenizer)
 
+
     if configs.training.do_train:
         for p in model.parameters():
             if p.dim() > 1:
@@ -80,7 +81,7 @@ def main(configs: DictConfig):
     else:
         assert configs.training.checkpoint_path is not None
 
-        model = ConformerAttention.load_from_checkpoint(configs.training.checkpoint_path)
+        model = ConformerCTC.load_from_checkpoint(configs.training.checkpoint_path)
         model.eval()
 
 
