@@ -2,34 +2,41 @@ import argparse
 import os
 import sys
 
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
+
 import torch
 import pytorch_lightning as pl
 import hydra
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
-from omegaconf import DictConfig
+from omegaconf import DictConfig,OmegaConf
 from torch import nn
 
 from model.conformer_attention import ConformerAttention
 from model.conformer_transducer import ConformerTransducer
 
-curPath = os.path.abspath(os.path.dirname(__file__))
-rootPath = os.path.split(curPath)[0]
-sys.path.append(rootPath)
-
 from dataloder.datamodule import SpeechToTextDataModule
 from model.conformer_ctc import ConformerCTC
 from util.tokenizer import EnglishCharTokenizer, ChineseCharTokenizer
-
-parser = argparse.ArgumentParser(description="Config path")
-parser.add_argument("-cp", default="../conf", help="config path")  # config path
-parser.add_argument("-cn", default="conformer_ctc_configs", help="config name")  # config name
-parser.add_argument("--model ", default="ConformerCTC", help="model name")  # model name
-args = parser.parse_args()
+from model import REGISTER_MODEL
 
 
-@hydra.main(version_base=None, config_path=args.cp, config_name=args.cn)
-def main(configs: DictConfig):
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_path", default="../conf/configs", help="config path")
+    parser.add_argument("--model_name", default="conformer_ctc", help="model name")
+    parser.add_argument("--dataset_path", default=" ", help="dataset path")
+    parser.add_argument("--manifest_path", default="../manifests/aishell_chars/vocab.txt", help="manifest path")
+    parser.add_argument("--checkpoint_path", default=None, help="checkpoint path")
+
+    args = parser.parse_args()
+    return args
+
+def main(args):
+    configs = OmegaConf.load(args.config_path)
+
     device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
     print("Using device", device)
 
@@ -39,6 +46,9 @@ def main(configs: DictConfig):
     torch.cuda.manual_seed(666)
     print(configs)
 
+    configs.datamodule.dataset_path = args.dataset_path
+    configs.datamodule.manifest_path = args.manifest_path
+    configs.tokenizer.word_dict_path = os.path.join(args.manifest_path, "vocab.txt")
     tokenizer = ChineseCharTokenizer(configs.tokenizer)
 
     configs.model.num_classes = len(tokenizer)
@@ -60,23 +70,20 @@ def main(configs: DictConfig):
         mode='min',
     )
 
-    if args.model == "ConformerCTC":
-        model = ConformerCTC(configs, tokenizer)
-    else:
-        model = ConformerAttention(configs, tokenizer)
-
+    assert args.model_name in REGISTER_MODEL
+    model = REGISTER_MODEL[args.model_name](configs, tokenizer)
 
     if configs.training.do_train:
-        for p in model.parameters():
-            if p.dim() > 1:
-                nn.init.xavier_uniform_(p)
-        print(model)
         trainer = pl.Trainer(logger=logger,
                              callbacks=[checkpoint_callback, early_stop_callback],
                              **configs.trainer)
         if configs.training.checkpoint_path is not None:
             trainer.fit(model, datamodule=data_module, ckpt_path=configs.training.checkpoint_path, )
         else:
+            for p in model.parameters():
+                if p.dim() > 1:
+                    nn.init.xavier_uniform_(p)
+            print(model)
             trainer.fit(model, datamodule=data_module, )
     else:
         assert configs.training.checkpoint_path is not None
@@ -86,4 +93,5 @@ def main(configs: DictConfig):
 
 
 if __name__ == "__main__":
-    main()
+    args = get_args()
+    main(args)

@@ -52,10 +52,10 @@ class ConformerCTC(BaseModel):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
         logits = self.fc(encoder_outputs)
         loss = self.criterion(
-            log_probs=logits.transpose(0, 1),
-            targets=targets,
-            input_lengths=output_lengths,
-            target_lengths=target_lengths,
+            hs_pad=logits,
+            ys_pad=targets,
+            h_lens=output_lengths,
+            ys_lens=target_lengths,
         )
         self.log('train_loss', loss)
         self.log('lr', self.get_lr())
@@ -66,13 +66,12 @@ class ConformerCTC(BaseModel):
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
         logits = self.fc(encoder_outputs)
         loss = self.criterion(
-            log_probs=logits,
-            targets=targets,
-            input_lengths=output_lengths,
-            target_lengths=target_lengths,
+            hs_pad=logits,
+            ys_pad=targets,
+            h_lens=output_lengths,
+            ys_lens=target_lengths,
         )
         self.log('val_loss', loss)
-
         return {'val_loss': loss}
 
     def test_step(self, batch, batch_idx):

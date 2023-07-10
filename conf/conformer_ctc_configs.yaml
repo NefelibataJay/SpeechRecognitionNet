@@ -1,7 +1,7 @@
 training:
   do_train: True
   checkpoint_path: # ../checkpoints/**.ckpt
-  batch_size: 16
+  batch_size: 32
   max_epoch: 50
   optimizer_name: adam
   lr_scheduler_name: exponential_lr
@@ -31,17 +31,17 @@ datamodule:
     spec_trim_conf:
       max_t: 50
 
-  dataset_path: /data_disk/zlf/datasets/aishell/data_aishell/
+  dataset_path: /data/dataset/aishell/data_aishell
   batch_size: ${training.batch_size}
   one_dataset: True
   val_set_ratio: 0.05
   test_set_ratio: 0.05
   num_workers: 0
-  manifest_path: /data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars
+  manifest_path: ../manifests/aishell_chars
 
 tokenizer:
   lang: zh
-  word_dict_path: /data_disk/zlf/code/jModel/SpeechNet/manifests/aishell_chars/vocab.txt
+  word_dict_path: ../manifests/aishell_chars/vocab.txt
 
 logger:
   save_dir: ./tb_logs

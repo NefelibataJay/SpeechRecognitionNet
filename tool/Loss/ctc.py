@@ -15,7 +15,6 @@ class CTC(torch.nn.Module):
     ):
         """ Construct CTC module """
         super().__init__()
-        assert reduction == 'sum' "Not implemented yet"
         self.ctc_loss = torch.nn.CTCLoss(blank=blank, reduction=reduction, zero_infinity=zero_infinity)
 
     def forward(self, hs_pad: torch.Tensor, h_lens: torch.Tensor,
